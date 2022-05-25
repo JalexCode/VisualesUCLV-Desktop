@@ -29,7 +29,7 @@ def get_listado_file():
 
 def get_all_directories_tree():
     tree = GeneralTree(VISUALES_UCLV_URL)
-    with open("temp/directories.visuales", "r", encoding="utf-8") as listado_file:
+    with open("util/temp/directories.visuales", "r", encoding="utf-8") as listado_file:
         bs = BeautifulSoup(listado_file.read())
         directories = bs.find_all("a")
         #
@@ -43,19 +43,23 @@ def get_all_directories_tree():
             print("LAST:", last_directory)
             directory_name = directory_href.replace(last_directory, "")
             print("CURRENT:", directory_name)
-            # tree.add_child(last_directory, href)
+            item_parent = last_directory
+            item_value = directory_href
             if directory_href in next_directory:
                 if last_directory not in directory_href:
-                    print("IT'S HAPPENING")
+                    # print("IT'S HAPPENING")
                     current_level -= 1
                     last_directory = parents[current_level]
-                    parents = parents[:current_level]
-                    continue
-                last_directory = directory_href
-                parents.append(directory_href)
-                current_level += 1
+                    print("+ SE CAMBIO EL LAST:", last_directory)
+                    parents.pop(-1)
+                    
+                else:
+                    last_directory = directory_href
+                    print("- SE CAMBIO EL LAST:", last_directory)
+                    parents.append(directory_href)
+                    current_level += 1
+                directory_name = directory_href.replace(last_directory, "")
+                print("SE CAMBIO EL CURRENT:", directory_name)
+            tree.add_child(last_directory, directory_href)
         # for i in tree.preorder():
         #     print(i)
-
-
-get_all_directories_tree()
