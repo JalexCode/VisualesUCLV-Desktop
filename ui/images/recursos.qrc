@@ -1,0 +1,18 @@
+<RCC>
+  <qresource prefix="menubar">
+    <file>about.png</file>
+    <file>Emoji Objects-29.png</file>
+    <file>Emoji Objects-107.png</file>
+    <file>Emoji Symbols-134.png</file>
+  </qresource>
+  <qresource prefix="toolbar">
+    <file>pause.png</file>
+    <file>play.png</file>
+    <file>stop.png</file>
+    <file>del_all_.png</file>
+    <file>Emoji Objects-56.png</file>
+    <file>Emoji Objects-112.png</file>
+    <file>Emoji Symbols-134.png</file>
+    <file>Emoji Symbols-185.png</file>
+  </qresource>
+</RCC>

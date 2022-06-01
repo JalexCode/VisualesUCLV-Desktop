@@ -33,11 +33,9 @@ def load_visuales_tree(html_string: str) -> Tree:
     dir_name, dir_identifier = __get_root_name_and_identifier(link_tags)
     tree.create_node(tag=dir_name, identifier=dir_identifier)
     # ----------------
-
     for html_tag in link_tags[1:]:
         dir_name = __get_name_of_directory(html_tag)
         dir_identifier = __get_identifier_of_directory(html_tag)
         dir_parent = __get_parent(html_tag)
         tree.create_node(tag=dir_name, identifier=dir_identifier, parent=dir_parent)
-
     return tree
