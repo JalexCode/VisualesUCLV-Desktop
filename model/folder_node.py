@@ -1,8 +1,8 @@
 class FolderNode:
-    def __init__(self, name:str, visited:str, favorite:str):
-        self._name:str = name
-        self._visited:str = visited
-        self._favorite:str = favorite
+    def __init__(self, name: str, is_empty: str, favorite: str):
+        self._name: str = name
+        self._is_empty: str = is_empty
+        self._favorite: str = favorite
 
     @property
     def name(self):
@@ -13,12 +13,12 @@ class FolderNode:
         self._name = v
 
     @property
-    def visited(self):
-        return self._visited
+    def is_empty(self):
+        return self._is_empty
 
-    @visited.setter
-    def visited(self, visited):
-        self._visited = visited
+    @is_empty.setter
+    def is_empty(self, value):
+        self._is_empty = value
 
     @property
     def favorite(self):
@@ -27,3 +27,6 @@ class FolderNode:
     @favorite.setter
     def favorite(self, favorite):
         self._favorite = favorite
+
+    def __str__(self) -> str:
+        return self.name
