@@ -2,10 +2,10 @@ from datetime import datetime
 
 
 class FileNode:
-    def __init__(self, filename:str, modification_date:datetime, size:str, href:str, type:str):
+    def __init__(self, filename:str, modification_date:datetime, size:float, href:str, type:str):
         self._filename:str = filename
         self._modification_date:datetime = modification_date
-        self._size:str = size
+        self._size:float = size
         self._href:str = href
         self._type:str = type
 
