@@ -2,6 +2,8 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 import requests
 from contextlib import closing
+
+from model.tree_loader import load_visuales_tree
 from util.util import *
 import time
 
@@ -109,4 +111,17 @@ class Request:
                             self.progress_signal.emit(i * 100 // len(children) * 5, None, None)
             self.finish_signal.emit(files)
         except Exception as error:
+            self.error_signal.emit(error)
+
+    def read_html_file(self):
+        self.info_signal.emit(f"Leyendo archivo {DIRS_FILE_NAME}")
+        try:
+            html_str = get_directories()
+            self.info_signal.emit(f"Parseando archivo {DIRS_FILE_NAME}")
+            tree = load_visuales_tree(html_str, self.progress_signal)
+            self.finish_signal.emit(tree)
+        except Exception as error:
+            if isinstance(error, DirsFileDoesntExistException):
+                print(f"\tTarea fallida [{DIRS_FILE_NAME}]")
+            print("\t" + str(error.args[0]))
             self.error_signal.emit(error)
