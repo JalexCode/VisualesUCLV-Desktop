@@ -9,11 +9,10 @@ from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QLabel, QProgressBar, QToolButton, QLineEdit, QWidget, QMainWindow, QHBoxLayout, QToolBar, \
     QTreeWidgetItem, QTableWidgetItem, QMessageBox, QApplication
 
-from model.threads import RequestThread
+from model.threads import SubTaskThread
 from model.tree_loader import load_visuales_tree
 from ui.about_dialog import AboutDialog
 from util.logger import SENT_TO_LOG
-from util.net import *
 from util.settings import SETTINGS, SAVE_SETTINGS
 from util.util import *
 import webbrowser
@@ -112,7 +111,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         #
         self.is_empty_message_label = QLabel(
             "No hay datos guardados localmente.\nSi está conectado a Internet, presione el botón 'Descargar repositorio remoto' para obtener el fichero de directorios del FTP e iniciar la exploración")
-        self.is_empty_message_label.setAlignment(Qt.AlignCenter|Qt.AlignCenter)
+        self.is_empty_message_label.setAlignment(Qt.AlignCenter | Qt.AlignCenter)
         self.is_empty_message_label.setVisible(False)
         self.gridLayout.addWidget(self.is_empty_message_label)
 
@@ -203,34 +202,59 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             self.read_html_file()
 
     def read_html_file(self):
-        print(f"Leyendo archivo {DIRS_FILE_NAME}")
-        try:
-            html_str = get_directories()
-            self.tree = load_visuales_tree(html_str)
-            self.fill_tree(None, self.tree.get_node(self.tree.root))
-            return True
-        except DirsFileDoesntExistException as e:
-            print(f"\tTarea fallida [{DIRS_FILE_NAME}]")
-            print("\t" + str(e.args[0]))
+        if not self.work_in_progress:
+            print(f"Leyendo archivo {DIRS_FILE_NAME}")
+            try:
+                self.set_work_in_progress(True)
+                self.thread = SubTaskThread()
+                self.thread.info_signal.connect(lambda text: self.state_label.setText(text))
+                self.thread.error_signal.connect(lambda error: self.error(error.args))
+                self.thread.progress_signal.connect(lambda progress, speed, left_time: self.set_progress(progress, None, left_time, text="Tiempo restante"))
+                self.thread.finish_signal.connect(self.success_read_html_fil)
+                thread = threading.Thread(target=self.thread.read_html_file)
+                thread.start()
+            except Exception as e:
+                print(f"\tTarea fallida [{DIRS_FILE_NAME}]")
+                print("\t" + str(e.args))
+                self.state_label.setText(AN_ERROR_WAS_OCURRED)
+                self.error(e.args)
+        else:
+            self.notificate_work_in_progress()
 
-    def set_progress(self, percent: int, speed, left_time):
+    def success_read_html_fil(self, tree):
+        self.state_label.setText("Datos cargados")
+        self.set_work_in_progress(False)
+        #
+        self.tree = tree
+        #
+        self.check_tree_is_empty()
+        #
+        self.fill_tree(None, self.tree.get_node(self.tree.root))
+
+    def set_progress(self, percent: int, speed, left_time, text=""):
         self.progress.setValue(percent)
-        if speed is not None and left_time is not None:
-            self.state_label.setText(f"Descargando {nz(speed)}/s {nd(left_time)}")
+        state_text = text
+        if speed is not None:
+            state_text += f" {nz(speed)}/s"
+        if left_time is not None:
+            state_text += f" {nd(left_time)}"
+        self.state_label.setText(state_text)
 
     def set_work_in_progress(self, b):
         self.progress.setVisible(b)
+        self.progress.setValue(0 if b else 100)
         self.work_in_progress = b
 
     def notificate_work_in_progress(self):
-        QMessageBox.information(self, "Información", "Espere a que termine la tarea actual para proceder a realizar una nueva")
+        QMessageBox.information(self, "Información",
+                                "Espere a que termine la tarea actual para proceder a realizar una nueva")
 
     def request_remote_repo_file(self):
         if not self.work_in_progress:
             print(f"Solicitando archivo {LISTADO_HTML_FILE}")
             try:
                 self.set_work_in_progress(True)
-                self.thread = RequestThread()
+                self.thread = SubTaskThread()
                 self.thread.info_signal.connect(lambda text: self.state_label.setText(text))
                 self.thread.error_signal.connect(lambda error: self.error(error.args))
                 self.thread.finish_signal.connect(lambda response: self.download_remote_repo(response))
@@ -243,7 +267,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         else:
             self.notificate_work_in_progress()
 
-    def download_remote_repo(self, last_modified_header:str):
+    def download_remote_repo(self, last_modified_header: str):
         # get last modified setting
         last_modified = SETTINGS.value("last_modification_date", type=str)
         # get last modified date from header
@@ -258,15 +282,16 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         current_last_modified = datetime.strptime(current_last_modified, DATE_FROM_SERVER_FORMAT)
         # if file was updated
         if current_last_modified != last_modified:
-            q = QMessageBox.question(self, "Información del repositorio", f"Los datos fueron actualizados el día {current_last_modified}. ¿Desea descargar los nuevos datos?",
+            q = QMessageBox.question(self, "Información del repositorio",
+                                     f"Los datos fueron actualizados el día {current_last_modified}. ¿Desea descargar los nuevos datos?",
                                      QMessageBox.Yes | QMessageBox.No)
             if q == QMessageBox.Yes:
                 print(f"Descargando archivo {LISTADO_HTML_FILE}")
                 try:
                     self.set_work_in_progress(True)
-                    self.thread = RequestThread()
+                    self.thread = SubTaskThread()
                     self.thread.info_signal.connect(lambda text: self.state_label.setText(text))
-                    self.thread.progress_signal.connect(self.set_progress)
+                    self.thread.progress_signal.connect(lambda progress, speed, left_time: self.set_progress(progress, speed, left_time, text="Descargando"))
                     self.thread.error_signal.connect(lambda error: self.error(error.args))
                     self.thread.finish_signal.connect(self.success_download)
                     thread = threading.Thread(target=self.thread.download_file)
@@ -279,7 +304,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 self.set_work_in_progress(False)
         else:
             QMessageBox.information(self, "Información del repositorio",
-                                 "No hay cambios en el repositorio")
+                                    "No hay cambios en el repositorio")
 
     def success_download(self):
         self.set_work_in_progress(False)
@@ -322,7 +347,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 try:
                     if not node.tag.is_empty:
                         self.set_work_in_progress(True)
-                        self.thread = RequestThread()
+                        self.thread = SubTaskThread()
                         self.thread.info_signal.connect(lambda text: self.state_label.setText(text))
                         self.thread.progress_signal.connect(self.set_progress)
                         self.thread.error_signal.connect(lambda error: self.error(error.args))
@@ -428,8 +453,14 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             save_all_dirs_n_files_tree(self.tree)
             event.accept()
         else:
-            QMessageBox.information(self, "Información", "No puede cerrar el programa aún porque hay una tarea activa. Si el programa se cerrase, la integridad de los datos pudiera perderse y consigo su respositorio local.\nPor favor, espere...")
-            event.ignore()
+
+            q = QMessageBox.question(self, "Información",
+                                     "No debe cerrar el programa aún porque hay una tarea activa. Si el programa se cerrase, la integridad de los datos pudiera perderse y consigo su respositorio local.\n¿Está seguro de cerrar el programa?",
+                                     QMessageBox.Yes | QMessageBox.No)
+            if q == QMessageBox.Yes:
+                event.accept()
+            else:
+                event.ignore()
 
     def show_about(self):
         self.about_dialog = AboutDialog()
