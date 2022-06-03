@@ -1,6 +1,6 @@
 from PyQt5.QtCore import QObject, pyqtSignal
 from model.process import Request
-class RequestThread(QObject):
+class SubTaskThread(QObject):
     info_signal = pyqtSignal(object)
     progress_signal = pyqtSignal(object, object, object)
     error_signal = pyqtSignal(object)
@@ -22,3 +22,8 @@ class RequestThread(QObject):
         request = Request()
         request.signals(self.info_signal, self.progress_signal, self.error_signal, self.finish_signal)
         request.get_page(url=url, parent=parent)
+
+    def read_html_file(self):
+        request = Request()
+        request.signals(self.info_signal, self.progress_signal, self.error_signal, self.finish_signal)
+        request.read_html_file()
