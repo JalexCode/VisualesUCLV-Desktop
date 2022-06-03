@@ -1,8 +1,8 @@
 class FolderNode:
-    def __init__(self, name: str, is_empty: str, favorite: str):
+    def __init__(self, name: str, is_empty: bool, favorite: bool):
         self._name: str = name
-        self._is_empty: str = is_empty
-        self._favorite: str = favorite
+        self._is_empty: bool = is_empty
+        self._favorite: bool = favorite
 
     @property
     def name(self):
