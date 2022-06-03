@@ -1,7 +1,5 @@
-import os
 import pickle
 
-from numpy import isin
 from model.file_node import FileNode
 from util.const import *
 from model.exceptions import *
@@ -11,13 +9,23 @@ try:
 except:
     pass
 
-def get_directories():
+def get_directories() -> str:
+    '''
+    Load 'listado.html' content
+    :return:
+    '''
     if os.path.exists(DIR_FILE):
         with open(DIR_FILE, "r", encoding="utf-8") as listado_file:
             return listado_file.read()
     raise DirsFileDoesntExistException(f"No se encontró el fichero {DIRS_FILE_NAME}")
 
-def have_children(tree:Tree, node:Node):
+def have_children(tree:Tree, node:Node) -> bool:
+    '''
+    check if a folder has at least one File
+    :param tree:
+    :param node:
+    :return:
+    '''
     children = tree.children(node.identifier)
     for child in children:
         if isinstance(child.tag, FileNode):
@@ -51,21 +59,55 @@ def get_test_tree():
                         parent='http://visuales.uclv.cu//Pelis/')
     return tree
 
-def load_all_dirs_n_files_tree():
+def load_all_dirs_n_files_tree() -> Tree:
+    '''
+    Load serialized Tree object
+    :return: Tree
+    '''
     if os.path.exists(TREE_FILE):
         with open(TREE_FILE, "rb") as serialized_data:
             return pickle.load(serialized_data)
     raise TreeFileDoesntExistException(f"No se encontró el fichero {TREE_DATA_FILE_NAME}")
     
-def save_all_dirs_n_files_tree(tree:Tree):
-    with open(TREE_FILE, "wb") as serialized_data:
-        return pickle.dump(tree, serialized_data)
+def save_all_dirs_n_files_tree(tree:Tree) -> None:
+    '''
+    Saves Tree in a file with pickle
+    :param tree:
+    :return:
+    '''
+    if tree.size(0):
+        with open(TREE_FILE, "wb") as serialized_data:
+            return pickle.dump(tree, serialized_data)
     
-def add_file_nodes_2_tree(tree:Tree, parent:Node, nodes:list):
+def add_file_nodes_2_tree(tree:Tree, parent:Node, nodes:list) -> None:
+    '''
+    Adds FileNodes to a FolderNode in Tree
+    :param tree:
+    :param parent:
+    :param nodes:
+    :return:
+    '''
     for node in nodes:
         tree.create_node(tag=node, identifier=node.href, parent=parent.identifier)
+        
+def get_total_size(nodes:list) -> int:
+    '''
+    Returns the sum of all file size in folder
+    :param nodes:
+    :return:
+    '''
+    total = 0
+    for node in nodes:
+        if isinstance(node.tag, FileNode):
+            total += node.tag.size
+    return total
 
-def get_type(url:str):
+def get_type(url:str) -> str:
+    '''
+    Returns a file type
+    :param url:
+    :return:
+    '''
     splitted = url.split("/")
     raw_type = splitted[-1]
     if "movie" in raw_type:
@@ -78,14 +120,19 @@ def get_type(url:str):
         return LAYOUT
     return UNKNOWN
 
-def search(tree:Tree, text:str):
-    result = tree.filter_nodes(lambda node: (text.lower() in node.tag.filename.lower()) if isinstance(node.tag, FileNode) else (text.lower() in node.tag.lower()))
+def search(tree:Tree, text:str) -> list:
+    '''
+    Search nodes in the Tree that contains the given text
+    :param tree:
+    :param text:
+    :return:
+    '''
+    result = tree.filter_nodes(lambda node: (text.lower() in str(node.tag).lower()) if isinstance(node.tag, FileNode) else (text.lower() in str(node.tag).lower()))
     return list(result)
 # >---------------------------------------------------------------------------------------------------------------------<
 import math
 
-def get_bytes(size_str:str):
-    total_bytes = 0
+def get_bytes(size_str:str) -> float:
     if size_str.isnumeric():
         total_bytes = float(size_str)
     else:
@@ -98,7 +145,7 @@ def get_bytes(size_str:str):
             total_bytes *= 1000000000
     return total_bytes       
 
-def nz(size_bytes):
+def nz(size_bytes) -> str:
     if size_bytes == 0:
         return "0.0 B"
     size_name = ("B", "KB", "MB", "GB")
@@ -107,7 +154,7 @@ def nz(size_bytes):
     s = round(size_bytes / p, 2)
     return "%s %s" % (s, size_name[i])
 
-def nd(segundos:'int'):
+def nd(segundos:'int') -> str:
     horas = int(segundos // 3600)
     segundos -= horas * 3600
     minutos = int(segundos // 60)
