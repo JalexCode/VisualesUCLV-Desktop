@@ -2,6 +2,8 @@ from treelib import Tree
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
+from model.folder_node import FolderNode
+
 
 def __get_parent(element: Tag) -> str:
     href = element.attrs['href']
@@ -31,11 +33,11 @@ def load_visuales_tree(html_string: str) -> Tree:
     tree = Tree()
     # Root------------
     dir_name, dir_identifier = __get_root_name_and_identifier(link_tags)
-    tree.create_node(tag=dir_name, identifier=dir_identifier)
+    tree.create_node(tag=FolderNode(dir_name, False, False), identifier=dir_identifier)
     # ----------------
     for html_tag in link_tags[1:]:
         dir_name = __get_name_of_directory(html_tag)
         dir_identifier = __get_identifier_of_directory(html_tag)
         dir_parent = __get_parent(html_tag)
-        tree.create_node(tag=dir_name, identifier=dir_identifier, parent=dir_parent)
+        tree.create_node(tag=FolderNode(dir_name, False, False), identifier=dir_identifier, parent=dir_parent)
     return tree
