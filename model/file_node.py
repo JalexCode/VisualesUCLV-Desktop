@@ -1,7 +1,10 @@
+from datetime import datetime
+
+
 class FileNode:
-    def __init__(self, filename:str, modification_date:str, size:str, href:str, type:str):
+    def __init__(self, filename:str, modification_date:datetime, size:str, href:str, type:str):
         self._filename:str = filename
-        self._modification_date:str = modification_date
+        self._modification_date:datetime = modification_date
         self._size:str = size
         self._href:str = href
         self._type:str = type
@@ -45,6 +48,9 @@ class FileNode:
     @type.setter
     def type(self, type):
         self._type = type
+        
+    def __str__(self) -> str:
+        return self.filename
 
     def __eq__(self, other):
-        return self.filename == other.filename and self.modification_date == self.modification_date and self.size == other.size
+        return self.filename == other.filename and self.modification_date == other.modification_date and self.size == other.size
