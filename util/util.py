@@ -1,6 +1,7 @@
 import pickle
 
 from model.file_node import FileNode
+from model.folder_node import FolderNode
 from util.const import *
 from model.exceptions import *
 from treelib import Node, Tree
@@ -11,7 +12,7 @@ except:
 
 def get_directories() -> str:
     '''
-    Load 'listado.html' content
+    Load 'listado.html' file content
     :return:
     '''
     if os.path.exists(DIR_FILE):
@@ -128,6 +129,17 @@ def search(tree:Tree, text:str) -> list:
     :return:
     '''
     result = tree.filter_nodes(lambda node: (text.lower() in str(node.tag).lower()) if isinstance(node.tag, FileNode) else (text.lower() in str(node.tag).lower()))
+    return list(result)
+def filter_favorites(tree:Tree) -> list:
+    '''
+    Search nodes in the Tree that are checked as Favorite
+    :param tree:
+    :return list:
+    '''
+    def filter(node):
+        if isinstance(node.tag, FolderNode) and node.tag.favorite:
+            return node
+    result = tree.filter_nodes(filter)
     return list(result)
 # >---------------------------------------------------------------------------------------------------------------------<
 import math
