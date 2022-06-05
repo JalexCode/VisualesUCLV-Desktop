@@ -53,7 +53,7 @@ def load_visuales_tree(html_string: str, progress_signal=None) -> Tree:
             # speed
             speed = int(i // (delay + 1))
             # left_time
-            left_time = ((len(tags) + 1) - i) / speed
+            left_time = ((len(tags) + 1) - i) / speed if speed > 0 else 1
             # emit
             progress_signal.emit(percent, speed, left_time)
     return tree
