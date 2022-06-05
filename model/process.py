@@ -67,7 +67,7 @@ class Request:
                             # download speed
                             speed = int(downloaded // (delay + 1))
                             # left_time
-                            left_time = (file_size - downloaded) / speed
+                            left_time = (file_size - downloaded) / speed if speed > 0 else 1
                             # emit progress signal
                             self.progress_signal.emit(percent, speed, left_time)
                     print("[OK] FILE WAS SAVED")
