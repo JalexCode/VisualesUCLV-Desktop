@@ -10,8 +10,8 @@ from PyQt5.QtWidgets import QLabel, QProgressBar, QToolButton, QLineEdit, QWidge
     QTreeWidgetItem, QTableWidgetItem, QMessageBox, QApplication
 
 from model.threads import SubTaskThread
-from model.tree_loader import load_visuales_tree
 from ui.about_dialog import AboutDialog
+from ui.favorites_group import FavoritesGroup
 from util.logger import SENT_TO_LOG
 from util.settings import SETTINGS, SAVE_SETTINGS
 from util.util import *
@@ -53,6 +53,8 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         #
         self.setWindowTitle(APP_NAME)
         #
+        self.favorites_group_window = None
+        #
         self.progress = QProgressBar()
         self.progress.setValue(0)
         self.progress.setMaximumWidth(100)
@@ -78,6 +80,13 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         #
         self.toolbar = QToolBar("Toolbar")
         #
+        self.download_file_button = QToolButton()
+        self.download_file_button.setText("Descargar repositorio remoto")
+        self.download_file_button.setToolTip("Descarga los datos de los directorios del repositorio remoto")
+        self.download_file_button.setIcon(QIcon(":/icons/images/download.png"))
+        self.download_file_button.clicked.connect(lambda: self.request_remote_repo_file())
+        self.toolbar.addWidget(self.download_file_button)
+        #
         self.search_button = QToolButton()
         self.search_button.setText("Buscar")
         self.search_button.setToolTip("Buscar archivos y directorios ya conocidos")
@@ -93,6 +102,14 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         self.favorite_button.clicked.connect(self.set_node_as_favorite)
         self.toolbar.addWidget(self.favorite_button)
         #
+        self.favorite_group_button = QToolButton()
+        self.favorite_group_button.setCheckable(True)
+        self.favorite_group_button.setText("Ver Favoritos")
+        self.favorite_group_button.setToolTip("Visualizar todos los directorios marcados como Favoritos")
+        self.favorite_group_button.setIcon(QIcon(":/icons/images/perm_group_bookmarks.png"))
+        self.favorite_group_button.clicked.connect(self.show_all_favorites)
+        self.toolbar.addWidget(self.favorite_group_button)
+        #
         self.save_tree_button = QToolButton()
         self.save_tree_button.setText("Guardar árbol")
         self.save_tree_button.setToolTip("Guarda una copia local de los datos del árbol")
@@ -100,20 +117,14 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         self.save_tree_button.clicked.connect(lambda: save_all_dirs_n_files_tree(self.tree))
         self.toolbar.addWidget(self.save_tree_button)
         #
-        self.download_file_button = QToolButton()
-        self.download_file_button.setText("Descargar repositorio remoto")
-        self.download_file_button.setToolTip("Descarga los datos de los directorios del repositorio remoto")
-        self.download_file_button.setIcon(QIcon(":/icons/images/download.png"))
-        self.download_file_button.clicked.connect(lambda: self.request_remote_repo_file())
-        self.toolbar.addWidget(self.download_file_button)
-        #
+        self.toolbar.setWindowTitle("Barra de herramientas")
         self.addToolBar(self.toolbar)
         #
-        self.is_empty_message_label = QLabel(
+        self.message_label = QLabel(
             "No hay datos guardados localmente.\nSi está conectado a Internet, presione el botón 'Descargar repositorio remoto' para obtener el fichero de directorios del FTP e iniciar la exploración")
-        self.is_empty_message_label.setAlignment(Qt.AlignCenter | Qt.AlignCenter)
-        self.is_empty_message_label.setVisible(False)
-        self.gridLayout.addWidget(self.is_empty_message_label)
+        self.message_label.setAlignment(Qt.AlignCenter | Qt.AlignCenter)
+        self.message_label.setVisible(False)
+        self.gridLayout.addWidget(self.message_label)
 
     def set_node_as_favorite(self):
         selected_item: QTreeWidgetItem = self.treeWidget.currentItem()
@@ -128,6 +139,16 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             else:
                 self.treeWidget.currentItem().setIcon(0, QIcon(""))
 
+    def show_all_favorites(self):
+        if self.favorite_group_button.isChecked() and self.favorites_group_window is None:
+            self.favorites_group_window = FavoritesGroup(self)
+            self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.favorites_group_window)
+            self.favorites_group_window.load(self.tree)
+        else:
+            self.favorites_group_window.close()
+            self.removeDockWidget(self.favorites_group_window)
+            self.favorites_group_window = None
+
     def show_hide_search_widget(self):
         if self.tree.size(0):
             self.clear_table()
@@ -135,6 +156,8 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             self.search_container.setVisible(not is_visible)
             # self.state_label.setVisible(is_visible)
             self.dockWidget.setVisible(is_visible)
+            if self.favorites_group_window is not None:
+                self.favorites_group_window.setVisible(is_visible)
             self.search_input.setFocus()
         else:
             self.search_button.setChecked(False)
@@ -185,7 +208,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         is_empty = self.tree.size(0) == 0
         self.dockWidget.setVisible(not is_empty)
         self.tableWidget.setVisible(not is_empty)
-        self.is_empty_message_label.setVisible(is_empty)
+        self.message_label.setVisible(is_empty)
 
     def load_local_repo(self):
         # load serialized tree file
@@ -205,31 +228,46 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         if not self.work_in_progress:
             print(f"Leyendo archivo {DIRS_FILE_NAME}")
             try:
+                # change state
                 self.set_work_in_progress(True)
+                self.show_hide_loading_message(True)
+                #
                 self.thread = SubTaskThread()
                 self.thread.info_signal.connect(lambda text: self.state_label.setText(text))
-                self.thread.error_signal.connect(lambda error: self.error(error.args))
-                self.thread.progress_signal.connect(lambda progress, speed, left_time: self.set_progress(progress, None, left_time, text="Tiempo restante"))
+                self.thread.error_signal.connect(self.error_read_html_fil)
+                self.thread.progress_signal.connect(
+                    lambda progress, speed, left_time: self.set_progress(progress, None, left_time,
+                                                                         text="Tiempo restante"))
                 self.thread.finish_signal.connect(self.success_read_html_fil)
                 thread = threading.Thread(target=self.thread.read_html_file)
                 thread.start()
             except Exception as e:
                 print(f"\tTarea fallida [{DIRS_FILE_NAME}]")
                 print("\t" + str(e.args))
-                self.state_label.setText(AN_ERROR_WAS_OCURRED)
-                self.error(e.args)
+                if isinstance(e, DirsFileDoesntExistException):
+                    self.state_label.setText(str(e.args))
+                    return
+                self.error(f"Leyendo el archivo '{DIRS_FILE_NAME}'", "Error de funcionamiento", e)
         else:
             self.notificate_work_in_progress()
 
     def success_read_html_fil(self, tree):
         self.state_label.setText("Datos cargados")
         self.set_work_in_progress(False)
+        self.show_hide_loading_message(False)
         #
         self.tree = tree
         #
         self.check_tree_is_empty()
         #
         self.fill_tree(None, self.tree.get_node(self.tree.root))
+
+    def error_read_html_fil(self, error):
+        if isinstance(error, DirsFileDoesntExistException):
+            self.state_label.setText(error.args[0])
+        else:
+            self.error(f"Leyendo el archivo '{DIRS_FILE_NAME}'", "No se pudieron cargar los datos del archivo", error)
+        self.set_work_in_progress(False)
 
     def set_progress(self, percent: int, speed, left_time, text=""):
         self.progress.setValue(percent)
@@ -245,6 +283,12 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         self.progress.setValue(0 if b else 100)
         self.work_in_progress = b
 
+    def show_hide_loading_message(self, b):
+        self.message_label.setVisible(b)
+        self.message_label.setText("Cargando...\n[Más detalles en la barra de estado]")
+        self.treeWidget.setVisible(not b)
+        self.tableWidget.setVisible(not b)
+
     def notificate_work_in_progress(self):
         QMessageBox.information(self, "Información",
                                 "Espere a que termine la tarea actual para proceder a realizar una nueva")
@@ -256,7 +300,9 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 self.set_work_in_progress(True)
                 self.thread = SubTaskThread()
                 self.thread.info_signal.connect(lambda text: self.state_label.setText(text))
-                self.thread.error_signal.connect(lambda error: self.error(error.args))
+                self.thread.error_signal.connect(
+                    lambda error: self.error("Solicitando archivo remoto", "La petición no se realizó con éxito",
+                                             error))
                 self.thread.finish_signal.connect(lambda response: self.download_remote_repo(response))
                 thread = threading.Thread(target=self.thread.request_file)
                 thread.start()
@@ -291,8 +337,10 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                     self.set_work_in_progress(True)
                     self.thread = SubTaskThread()
                     self.thread.info_signal.connect(lambda text: self.state_label.setText(text))
-                    self.thread.progress_signal.connect(lambda progress, speed, left_time: self.set_progress(progress, speed, left_time, text="Descargando"))
-                    self.thread.error_signal.connect(lambda error: self.error(error.args))
+                    self.thread.progress_signal.connect(
+                        lambda progress, speed, left_time: self.set_progress(progress, speed, left_time,
+                                                                             text="Descargando"))
+                    self.thread.error_signal.connect(lambda error: self.error("Descargando el archivo", "La descarga no fue exitosa", error))
                     self.thread.finish_signal.connect(self.success_download)
                     thread = threading.Thread(target=self.thread.download_file)
                     thread.start()
@@ -311,8 +359,8 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         self.read_html_file()
         self.check_tree_is_empty()
 
-    def show_file_details_on_state_bar(self):
-        i = self.tableWidget.currentRow()
+    def show_file_details_on_state_bar(self, item:QTableWidgetItem):
+        i = item.row()
         is_searching = self.search_button.isChecked()
         size = self.tableWidget.item(i, 3 if is_searching else 2).text()
         modification_date = self.tableWidget.item(i, 4 if is_searching else 3).text()
@@ -337,11 +385,11 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         print(items)
         # self.treeWidget.setCurrentItem(items[0])
 
-    def async_get_page(self, selected_item: QTreeWidgetItem):
+    def async_get_page(self, selected_item):
         if not self.work_in_progress:
+            folder_path = selected_item.text(1) if isinstance(selected_item, QTreeWidgetItem) else selected_item.text()
             # get node by column 1 text in QTreeWidgetItem
-            node: Node = self.tree.get_node(selected_item.text(1))
-            print(node.identifier)
+            node: Node = self.tree.get_node(folder_path)
             #
             if not have_children(self.tree, node):
                 try:
@@ -350,12 +398,12 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                         self.thread = SubTaskThread()
                         self.thread.info_signal.connect(lambda text: self.state_label.setText(text))
                         self.thread.progress_signal.connect(self.set_progress)
-                        self.thread.error_signal.connect(lambda error: self.error(error.args))
+                        self.thread.error_signal.connect(lambda error: self.error("Solicitando página remota", "La petición no concluyó exitosamente", error))
                         self.thread.finish_signal.connect(
                             lambda children: self.add_children_to_item(children=children, node=node,
                                                                        selected_item=selected_item))
                         thread = threading.Thread(target=self.thread.get_page,
-                                                  args=(selected_item.text(1), node.identifier,))
+                                                  args=(folder_path, node.identifier,))
                         thread.start()
                 except Exception as e:
                     print(e.args)
@@ -420,10 +468,19 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
     def get_expanded_item(self, expanded_item: QTreeWidgetItem):
         self.fill_tree(expanded_item, self.tree.get_node(expanded_item.text(1)))
 
-    def error(self, msg):
+    def error(self, place: str, text: str, exception: Exception = None):
         self.set_work_in_progress(False)
         self.state_label.setText(AN_ERROR_WAS_OCURRED)
-        QMessageBox.critical(self, 'Error', str(msg))
+        #
+        msg = QMessageBox(self)
+        msg.setIcon(msg.Icon.Critical)
+        msg.setBaseSize(300, 100)
+        msg.setWindowTitle("Error")
+        msg.setText(f"* {place} *")
+        msg.setInformativeText(f"-> {text}")
+        if exception is not None:
+            msg.setDetailedText(f"[{exception.__class__.__name__}] {str(exception.args)}")
+        msg.exec_()
 
     def fill_tree(self, parent: QTreeWidgetItem, node: Node):
         if parent is None:
