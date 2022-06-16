@@ -1,8 +1,8 @@
 @echo off
-echo Compilando LOGIN UC
+echo Compilando VISUALES
 echo ===================
 echo
-C:\Users\Jalex\anaconda3\Scripts\pyinstaller.exe --noconfirm --onefile --noconsole --icon=icon.ico WifiUCLogin.py
+pyinstaller.exe --noconfirm --noconsole --icon=icon.ico VisualesUCLVDesktop.py
 echo
 echo Terminado!
 pause

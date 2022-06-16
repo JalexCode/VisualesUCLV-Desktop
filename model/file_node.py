@@ -1,13 +1,17 @@
 from datetime import datetime
 
+from util.const import *
+
 
 class FileNode:
-    def __init__(self, filename:str, modification_date:datetime, size:float, href:str, type:str):
+    def __init__(self, filename:str, modification_date:datetime=datetime.now(), size:float=0, href:str=LISTADO_HTML_FILE, type:str=TEXT, favorite:bool=False, downloaded:bool=False):
         self._filename:str = filename
         self._modification_date:datetime = modification_date
         self._size:float = size
         self._href:str = href
         self._type:str = type
+        self._favorite = favorite
+        self._downloaded = downloaded
 
     @property
     def filename(self):
@@ -48,9 +52,31 @@ class FileNode:
     @type.setter
     def type(self, type):
         self._type = type
+
+    @property
+    def favorite(self):
+        return self._favorite
+
+    @favorite.setter
+    def favorite(self, value):
+        self._favorite = value
+        
+    @property
+    def downloaded(self):
+        return self._downloaded
+
+    @downloaded.setter
+    def downloaded(self, value):
+        self._downloaded = value
         
     def __str__(self) -> str:
         return self.filename
 
     def __eq__(self, other):
         return self.filename == other.filename and self.modification_date == other.modification_date and self.size == other.size
+
+    def __lt__(self, other):
+        return self.filename < other.filename
+
+    def __gt__(self, other):
+        return self.filename > other.filename

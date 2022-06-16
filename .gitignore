@@ -161,4 +161,7 @@ cython_debug/
 /.idea
 
 # Este directorio es usado para crear reportes de ventas en formato html o pdf.
-/generated
+/data
+/build
+/dist
+/.qt_for_python

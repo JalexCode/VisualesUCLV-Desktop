@@ -1,63 +1,70 @@
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QDialog, QTableWidget, QTableWidgetItem, QVBoxLayout, QAbstractItemView, QFrame, \
-    QDockWidget, QWidget
-from treelib import Tree
+    QDockWidget, QWidget, QPlainTextEdit, QLabel
+from treelib import Node
 
-from util.const import ICON_SIZE
+from ui.util.pixmap_label import PixmapLabel
+from util.const import *
 from util.util import filter_favorites
 import ui.app_rc
 
-class FavoritesGroup(QDockWidget):
+
+class PreviewDock(QDockWidget):
+    '''
+    A Dock widget that contains an image viewer and a text reader
+    '''
     def __init__(self, parent=None):
         QDockWidget.__init__(self)
         self._parent = parent
         # window
-        self.setWindowTitle("Favoritos")
-        self.setWindowIcon(QIcon(":/icons/images/favorite.png"))
+        self.setWindowTitle("Visualizador")
+        self.setWindowIcon(QIcon(":/icons/images/start.ico"))
         self.setFeatures(QDockWidget.AllDockWidgetFeatures)
-        # table
-        self.tableWidget = QTableWidget(self)
-        # customing
-        self.tableWidget.setFrameShape(QFrame.NoFrame)
-        self.tableWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.tableWidget.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.tableWidget.setShowGrid(False)
-        self.tableWidget.setAlternatingRowColors(True)
-        # columns
-        self.tableWidget.setColumnCount(3)
-        self.tableWidget.setHorizontalHeaderLabels(['', 'Nombre', 'Ruta'])
-        self.tableWidget.verticalHeader().setVisible(False)
-        self.tableWidget.itemClicked.connect(lambda item: self._parent.async_get_page(self.tableWidget.item(item.row(), 2)))
+        self.setContentsMargins(0, 0, 0, 0)
+        # edit text
+        self.text_viewer = QPlainTextEdit()
+        # customing edit text
+        self.text_viewer.setFrameShape(QFrame.NoFrame)
+        self.text_viewer.setReadOnly(True)
+        self.text_viewer.setVisible(False)
+        # label
+        self.image_viewer = QLabel()  #PixmapLabel()
+        self.image_viewer.setText("")
+        #self.image_viewer.setScaledContents(True)
+        self.image_viewer.setVisible(False)
+        self.image_viewer.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
         # widget container
         self.main_widget = QWidget(self)
         # layout
         self.layout = QVBoxLayout(self.main_widget)
-        self.layout.addWidget(self.tableWidget)
-
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.addWidget(self.text_viewer)
+        self.layout.addWidget(self.image_viewer)
+        # set default layout
         self.main_widget.setLayout(self.layout)
         #
         self.setWidget(self.main_widget)
 
-    def load(self, tree:Tree):
-        result:list = filter_favorites(tree)
-        #
-        while self.tableWidget.rowCount() > 0:
-            self.tableWidget.removeRow(0)
-        #
-        for node in result:
-            row = self.tableWidget.rowCount()
-            self.tableWidget.insertRow(row)
+    #
+    def load(self, type: str, data):
+        if type == TEXT:
+            self.image_viewer.setVisible(False)
+            self.text_viewer.setVisible(True)
             #
-            icon_item = QTableWidgetItem()
-            pixmap = QPixmap(":/icons/images/folder.png")
-            pixmap = pixmap.scaled(ICON_SIZE, ICON_SIZE)
-            icon = QIcon(pixmap)
-            icon_item.setIcon(icon)
-            self.tableWidget.setItem(row, 0, icon_item)
-            self.tableWidget.setItem(row, 1, QTableWidgetItem(str(node.tag)))
-            self.tableWidget.setItem(row, 2, QTableWidgetItem(node.identifier))
-        self.tableWidget.resizeColumnsToContents()
+            self.text_viewer.setPlainText(data.decode("utf-8", errors="ignore"))
+        else:
+            self.image_viewer.setVisible(True)
+            self.text_viewer.setVisible(False)
+            #
+            pixmap = QPixmap()
+            pixmap.loadFromData(data)
+            pixmap = pixmap.scaled(PREVIEW_SIZE, PREVIEW_SIZE, Qt.KeepAspectRatioByExpanding,
+                                   Qt.SmoothTransformation)
+            #
+            self.image_viewer.setPixmap(pixmap)
 
     def closeEvent(self, event) -> None:
-        self._parent.favorite_group_button.setChecked(False)
+        self._parent.preview_dock = None
+        self._parent.removeDockWidget(self)
         event.accept()

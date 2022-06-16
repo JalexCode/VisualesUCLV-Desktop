@@ -1,0 +1,5 @@
+lxml
+beautifulsoup4
+treelib
+PyQt5
+requests

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'ui/main.ui'
+# Form implementation generated from reading ui file 'main.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.6
 #
@@ -26,6 +26,7 @@ class Ui_MainWindow(object):
         self.tableWidget = QtWidgets.QTableWidget(self.centralwidget)
         self.tableWidget.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.tableWidget.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.tableWidget.setAlternatingRowColors(True)
         self.tableWidget.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         self.tableWidget.setShowGrid(False)
         self.tableWidget.setGridStyle(QtCore.Qt.SolidLine)
@@ -49,6 +50,8 @@ class Ui_MainWindow(object):
         self.menubar.setObjectName("menubar")
         self.menuOpciones = QtWidgets.QMenu(self.menubar)
         self.menuOpciones.setObjectName("menuOpciones")
+        self.menuExportar_repositorio_local = QtWidgets.QMenu(self.menuOpciones)
+        self.menuExportar_repositorio_local.setObjectName("menuExportar_repositorio_local")
         self.menuInfo = QtWidgets.QMenu(self.menubar)
         self.menuInfo.setObjectName("menuInfo")
         MainWindow.setMenuBar(self.menubar)
@@ -76,20 +79,18 @@ class Ui_MainWindow(object):
         MainWindow.addDockWidget(QtCore.Qt.DockWidgetArea(1), self.dockWidget)
         self.load_data_action = QtWidgets.QAction(MainWindow)
         self.load_data_action.setObjectName("load_data_action")
-        self.actionSalir = QtWidgets.QAction(MainWindow)
-        self.actionSalir.setObjectName("actionSalir")
+        self.quit_action = QtWidgets.QAction(MainWindow)
+        self.quit_action.setObjectName("quit_action")
         self.download_remote_repo_action = QtWidgets.QAction(MainWindow)
         self.download_remote_repo_action.setObjectName("download_remote_repo_action")
-        self.save_local_repo_action = QtWidgets.QAction(MainWindow)
-        self.save_local_repo_action.setObjectName("save_local_repo_action")
         self.about_action = QtWidgets.QAction(MainWindow)
         self.about_action.setObjectName("about_action")
-        self.menuOpciones.addAction(self.save_local_repo_action)
-        self.menuOpciones.addAction(self.load_data_action)
+        self.export_local_repo_as_txt_action = QtWidgets.QAction(MainWindow)
+        self.export_local_repo_as_txt_action.setObjectName("export_local_repo_as_txt_action")
+        self.menuExportar_repositorio_local.addAction(self.export_local_repo_as_txt_action)
+        self.menuOpciones.addAction(self.menuExportar_repositorio_local.menuAction())
         self.menuOpciones.addSeparator()
-        self.menuOpciones.addAction(self.download_remote_repo_action)
-        self.menuOpciones.addSeparator()
-        self.menuOpciones.addAction(self.actionSalir)
+        self.menuOpciones.addAction(self.quit_action)
         self.menuInfo.addAction(self.about_action)
         self.menubar.addAction(self.menuOpciones.menuAction())
         self.menubar.addAction(self.menuInfo.menuAction())
@@ -107,14 +108,15 @@ class Ui_MainWindow(object):
         item.setText(_translate("MainWindow", "Tamaño"))
         item = self.tableWidget.horizontalHeaderItem(3)
         item.setText(_translate("MainWindow", "Fecha de modificación"))
-        self.menuOpciones.setTitle(_translate("MainWindow", "Opciones"))
+        self.menuOpciones.setTitle(_translate("MainWindow", "Aplicación"))
+        self.menuExportar_repositorio_local.setTitle(_translate("MainWindow", "Exportar repositorio local"))
         self.menuInfo.setTitle(_translate("MainWindow", "Info"))
         self.dockWidget.setWindowTitle(_translate("MainWindow", "Directorios"))
         self.load_data_action.setText(_translate("MainWindow", "Cargar repositorio local"))
-        self.actionSalir.setText(_translate("MainWindow", "Salir"))
+        self.quit_action.setText(_translate("MainWindow", "Salir"))
         self.download_remote_repo_action.setText(_translate("MainWindow", "Descargar repositorio remoto"))
-        self.save_local_repo_action.setText(_translate("MainWindow", "Guardar repositorio local"))
         self.about_action.setText(_translate("MainWindow", "Acerca de"))
+        self.export_local_repo_as_txt_action.setText(_translate("MainWindow", "TXT"))
 import ui.app_rc
 
 

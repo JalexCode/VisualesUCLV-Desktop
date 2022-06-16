@@ -2,8 +2,9 @@ from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QDialog, QTableWidget, QTableWidgetItem, QVBoxLayout, QAbstractItemView, QFrame, \
     QDockWidget, QWidget
 from treelib import Tree
+from model.folder_node import FolderNode
 
-from util.const import ICON_SIZE
+from util.const import FILE_TYPES, ICON_SIZE
 from util.util import filter_favorites
 import ui.app_rc
 
@@ -28,6 +29,7 @@ class FavoritesGroup(QDockWidget):
         self.tableWidget.setHorizontalHeaderLabels(['', 'Nombre', 'Ruta'])
         self.tableWidget.verticalHeader().setVisible(False)
         self.tableWidget.itemClicked.connect(lambda item: self._parent.async_get_page(self.tableWidget.item(item.row(), 2)))
+        self.tableWidget.itemClicked.connect(self.locate)
         # widget container
         self.main_widget = QWidget(self)
         # layout
@@ -39,6 +41,9 @@ class FavoritesGroup(QDockWidget):
         self.setWidget(self.main_widget)
 
     def load(self, tree:Tree):
+        '''
+        Fill table widget with Favorite nodes
+        '''
         result:list = filter_favorites(tree)
         #
         while self.tableWidget.rowCount() > 0:
@@ -49,7 +54,10 @@ class FavoritesGroup(QDockWidget):
             self.tableWidget.insertRow(row)
             #
             icon_item = QTableWidgetItem()
-            pixmap = QPixmap(":/icons/images/folder.png")
+            if isinstance(node.tag, FolderNode):
+                pixmap = QPixmap(":/icons/images/folder.png")
+            else:
+                pixmap = QPixmap(FILE_TYPES[node.tag.type])
             pixmap = pixmap.scaled(ICON_SIZE, ICON_SIZE)
             icon = QIcon(pixmap)
             icon_item.setIcon(icon)
@@ -57,6 +65,11 @@ class FavoritesGroup(QDockWidget):
             self.tableWidget.setItem(row, 1, QTableWidgetItem(str(node.tag)))
             self.tableWidget.setItem(row, 2, QTableWidgetItem(node.identifier))
         self.tableWidget.resizeColumnsToContents()
+
+    def locate(self):
+        i = self.tableWidget.currentRow()
+        id = self.tableWidget.item(i, 2).text()
+        self._parent.show_in_tree(id)
 
     def closeEvent(self, event) -> None:
         self._parent.favorite_group_button.setChecked(False)

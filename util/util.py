@@ -16,7 +16,7 @@ def get_directories() -> str:
     :return:
     '''
     if os.path.exists(DIR_FILE):
-        with open(DIR_FILE, "r", encoding="utf-8") as listado_file:
+        with open(DIR_FILE, "r", encoding="utf-8", errors="ignore") as listado_file:
             return listado_file.read()
     raise DirsFileDoesntExistException(f"No se encontró el fichero {DIRS_FILE_NAME}")
 
@@ -111,13 +111,13 @@ def get_type(url:str) -> str:
     '''
     splitted = url.split("/")
     raw_type = splitted[-1]
-    if "movie" in raw_type:
+    if MOVIE in raw_type:
         return MOVIE
-    elif "image" in raw_type:
-        return PICTURE
-    elif "text" in raw_type:
+    elif IMAGE in raw_type:
+        return IMAGE
+    elif TEXT in raw_type:
         return TEXT
-    elif "layout" in raw_type:
+    elif LAYOUT in raw_type:
         return LAYOUT
     return UNKNOWN
 
@@ -137,7 +137,8 @@ def filter_favorites(tree:Tree) -> list:
     :return list:
     '''
     def filter(node):
-        if isinstance(node.tag, FolderNode) and node.tag.favorite:
+        if node.tag.favorite:
+            print(node.tag)
             return node
     result = tree.filter_nodes(filter)
     return list(result)

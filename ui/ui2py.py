@@ -24,6 +24,8 @@ def change_somethings(name:str, replace:dict):
         py.write(content)
 
 ui2py("main")
-dict = {"import app_resources_rc":"import app_resources"}
+dict = {"import app_rc":"import ui.app_rc"}
 change_somethings("main", dict)
+ui2py("about")
+change_somethings("about", dict)
 #("main", main)

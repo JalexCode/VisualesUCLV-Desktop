@@ -8,6 +8,14 @@
     <file>images/video.png</file>
   </qresource>
   <qresource prefix="icons">
+    <file>images/perm_group_bookmarks.png</file>
+    <file>images/save.png</file>
+    <file>images/download.png</file>
+    <file>images/start.ico</file>
+    <file>images/clipboard.png</file>
+    <file>images/repo_download.png</file>
+    <file>images/success.png</file>
+    <file>images/favorite.png</file>
     <file>images/folder.png</file>
     <file>images/search.png</file>
   </qresource>

@@ -25,8 +25,14 @@ class FolderNode:
         return self._favorite
 
     @favorite.setter
-    def favorite(self, favorite):
-        self._favorite = favorite
+    def favorite(self, value):
+        self._favorite = value
 
     def __str__(self) -> str:
         return self.name
+
+    def __lt__(self, other):
+        return self.name < other.name
+
+    def __gt__(self, other):
+        return self.name > other.name
