@@ -1,7 +1,7 @@
 import unittest
 from treelib import Tree
 
-from model.tree_loader import load_visuales_tree
+from util.tree_loader import load_visuales_tree
 
 
 class TestLoadVisualesTree(unittest.TestCase):

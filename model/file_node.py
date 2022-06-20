@@ -72,8 +72,11 @@ class FileNode:
     def __str__(self) -> str:
         return self.filename
 
+    def __repr__(self) -> str:
+        return f"<{self.filename}>"
+
     def __eq__(self, other):
-        return self.filename == other.filename and self.modification_date == other.modification_date and self.size == other.size
+        return self.href == other.href
 
     def __lt__(self, other):
         return self.filename < other.filename

@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import requests
 from contextlib import closing
 
-from model.tree_loader import load_visuales_tree
+from util.tree_loader import load_visuales_tree
 from util.util import *
 import time
 
@@ -27,7 +27,7 @@ class Request:
         '''
         try:
             self.info_signal.emit("Solicitando datos remotos...")
-            with closing(requests.get(VISUALES_UCLV_URL, verify=False, timeout=TIMEOUT)) as response:
+            with closing(requests.get(LISTADO_HTML_FILE, verify=False, timeout=TIMEOUT)) as response:
                 if response.status_code == 200:
                     # parse data
                     bs = BeautifulSoup(response.text, features="lxml")
@@ -46,6 +46,7 @@ class Request:
                             #
                             self.info_signal.emit("Datos remotos obtenidos")
                             self.finish_signal.emit(FileNode(filename=filename, modification_date=modificated_date, size=size, href="", type="")) #response.headers['Last-Modified']
+                            return
                 else:
                     raise BadResponseException(response.status_code)
         except Exception as error:
@@ -131,8 +132,8 @@ class Request:
                             files.append(FileNode(filename, modificated_date, size, href, type))
                             # emit progress signal
                             self.progress_signal.emit(i * 100 // len(children) * 5, None, None)
-                # else:
-                #     BadResponseException(response.status_code)
+                else:
+                    BadResponseException(response.status_code)
             self.finish_signal.emit(files)
         except Exception as error:
             self.error_signal.emit(error)
@@ -144,7 +145,7 @@ class Request:
         '''
         self.info_signal.emit(f"Leyendo archivo {DIRS_FILE_NAME}")
         try:
-            html_str = get_directories()
+            html_str = get_html_file_content()
             self.info_signal.emit(f"Parseando archivo {DIRS_FILE_NAME}")
             tree = load_visuales_tree(html_str, self.progress_signal)
             self.finish_signal.emit(tree)
@@ -170,6 +171,8 @@ class Request:
                     self.info_signal.emit("Datos obtenidos")
                     # emit progress
                     self.progress_signal.emit(100, None, None)
+                else:
+                    raise BadResponseException(response.status_code)
         except Exception as error:
             if isinstance(error, DirsFileDoesntExistException):
                 print(f"\tTarea fallida [{DIRS_FILE_NAME}]")

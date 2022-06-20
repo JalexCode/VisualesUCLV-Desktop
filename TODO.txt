@@ -9,15 +9,15 @@ X Agregar al menu contextual la opcion de Copiar URL
 X Agregar atributo 'Descargado' a FileNode, para tener en cuenta si el archivo fue descargado ya o no
 
 # DESCARGADOR
-Posibilidad de exportar todos los links de los archivos de un directorio en TXT para poder descargarlos desde otro DESCARGADOR
-Configurar destino de la descarga
+X Posibilidad de exportar todos los links de los archivos de un directorio en TXT para poder descargarlos desde otro DESCARGADOR
+X Configurar destino de la descarga
 Descargas paralelas
-Descargas multihilos
-Posibilidad de pausar y reanudar las descargas individualmente y de manera general
-Calculo del tamanno total de descarga
+X Descargas multihilos
+X Posibilidad de pausar y reanudar las descargas individualmente y de manera general
+X Calculo del tamanno total de descarga
 Toolbar con botones para
-pausar/reanudar
-detener
+X pausar/reanudar
+X detener
 eliminar uno
 eliminar todos
 buscar

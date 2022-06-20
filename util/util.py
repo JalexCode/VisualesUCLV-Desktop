@@ -1,16 +1,17 @@
 import pickle
 
 from model.file_node import FileNode
-from model.folder_node import FolderNode
 from util.const import *
 from model.exceptions import *
 from treelib import Node, Tree
+
 try:
     os.mkdir(DATA_FOLDER)
 except:
     pass
 
-def get_directories() -> str:
+
+def get_html_file_content() -> str:
     '''
     Load 'listado.html' file content
     :return:
@@ -20,9 +21,10 @@ def get_directories() -> str:
             return listado_file.read()
     raise DirsFileDoesntExistException(f"No se encontró el fichero {DIRS_FILE_NAME}")
 
-def have_children(tree:Tree, node:Node) -> bool:
+
+def has_children(tree: Tree, node: Node) -> bool:
     '''
-    check if a folder has at least one File
+    Check if a folder has at least one File
     :param tree:
     :param node:
     :return:
@@ -33,32 +35,34 @@ def have_children(tree:Tree, node:Node) -> bool:
             return True
     return False
 
+
 def get_test_tree():
     tree = Tree()
     tree.create_node(tag='http://visuales.uclv.cu/',
-                        identifier='http://visuales.uclv.cu/')
+                     identifier='http://visuales.uclv.cu/')
     tree.create_node(tag='Cursos',
-                        identifier='http://visuales.uclv.cu//Cursos/'
-                        ,parent='http://visuales.uclv.cu/')
+                     identifier='http://visuales.uclv.cu//Cursos/'
+                     , parent='http://visuales.uclv.cu/')
     tree.create_node(tag='Libros',
-                        identifier='http://visuales.uclv.cu//Cursos/Libros/',
-                        parent='http://visuales.uclv.cu//Cursos/')
+                     identifier='http://visuales.uclv.cu//Cursos/Libros/',
+                     parent='http://visuales.uclv.cu//Cursos/')
     tree.create_node(tag='Java',
-                        identifier='http://visuales.uclv.cu//Cursos/Libros/Java/',
-                        parent='http://visuales.uclv.cu//Cursos/Libros/')
+                     identifier='http://visuales.uclv.cu//Cursos/Libros/Java/',
+                     parent='http://visuales.uclv.cu//Cursos/Libros/')
     tree.create_node(tag='Python',
-                        identifier='http://visuales.uclv.cu//Cursos/Libros/Python/',
-                        parent='http://visuales.uclv.cu//Cursos/Libros/')
+                     identifier='http://visuales.uclv.cu//Cursos/Libros/Python/',
+                     parent='http://visuales.uclv.cu//Cursos/Libros/')
     tree.create_node(tag='Pelis',
-                        identifier='http://visuales.uclv.cu//Pelis/',
-                        parent='http://visuales.uclv.cu/')
+                     identifier='http://visuales.uclv.cu//Pelis/',
+                     parent='http://visuales.uclv.cu/')
     tree.create_node(tag='La vida es bella',
-                        identifier='http://visuales.uclv.cu//Pelis/La vida es bella/',
-                        parent='http://visuales.uclv.cu//Pelis/')
+                     identifier='http://visuales.uclv.cu//Pelis/La vida es bella/',
+                     parent='http://visuales.uclv.cu//Pelis/')
     tree.create_node(tag='Gravity',
-                        identifier='http://visuales.uclv.cu//Pelis/Gravity/',
-                        parent='http://visuales.uclv.cu//Pelis/')
+                     identifier='http://visuales.uclv.cu//Pelis/Gravity/',
+                     parent='http://visuales.uclv.cu//Pelis/')
     return tree
+
 
 def load_all_dirs_n_files_tree() -> Tree:
     '''
@@ -69,8 +73,9 @@ def load_all_dirs_n_files_tree() -> Tree:
         with open(TREE_FILE, "rb") as serialized_data:
             return pickle.load(serialized_data)
     raise TreeFileDoesntExistException(f"No se encontró el fichero {TREE_DATA_FILE_NAME}")
-    
-def save_all_dirs_n_files_tree(tree:Tree) -> None:
+
+
+def save_all_dirs_n_files_tree(tree: Tree) -> None:
     '''
     Saves Tree in a file with pickle
     :param tree:
@@ -79,8 +84,9 @@ def save_all_dirs_n_files_tree(tree:Tree) -> None:
     if tree.size(0):
         with open(TREE_FILE, "wb") as serialized_data:
             return pickle.dump(tree, serialized_data)
-    
-def add_file_nodes_2_tree(tree:Tree, parent:Node, nodes:list) -> None:
+
+
+def add_file_nodes_2_tree(tree: Tree, parent: Node, nodes: list) -> None:
     '''
     Adds FileNodes to a FolderNode in Tree
     :param tree:
@@ -90,8 +96,9 @@ def add_file_nodes_2_tree(tree:Tree, parent:Node, nodes:list) -> None:
     '''
     for node in nodes:
         tree.create_node(tag=node, identifier=node.href, parent=parent.identifier)
-        
-def get_total_size(nodes:list) -> int:
+
+
+def get_total_size(nodes: list) -> int:
     '''
     Returns the sum of all file size in folder
     :param nodes:
@@ -103,7 +110,8 @@ def get_total_size(nodes:list) -> int:
             total += node.tag.size
     return total
 
-def get_type(url:str) -> str:
+
+def get_type(url: str) -> str:
     '''
     Returns a file type
     :param url:
@@ -121,31 +129,41 @@ def get_type(url:str) -> str:
         return LAYOUT
     return UNKNOWN
 
-def search(tree:Tree, text:str) -> list:
+
+def search(tree: Tree, text: str) -> list:
     '''
     Search nodes in the Tree that contains the given text
     :param tree:
     :param text:
     :return:
     '''
-    result = tree.filter_nodes(lambda node: (text.lower() in str(node.tag).lower()) if isinstance(node.tag, FileNode) else (text.lower() in str(node.tag).lower()))
+    result = tree.filter_nodes(
+        lambda node: (text.lower() in str(node.tag).lower()) if isinstance(node.tag, FileNode) else (
+                    text.lower() in str(node.tag).lower()))
     return list(result)
-def filter_favorites(tree:Tree) -> list:
+
+
+def filter_favorites(tree: Tree) -> list:
     '''
     Search nodes in the Tree that are checked as Favorite
     :param tree:
     :return list:
     '''
+
     def filter(node):
         if node.tag.favorite:
             print(node.tag)
             return node
+
     result = tree.filter_nodes(filter)
     return list(result)
+
+
 # >---------------------------------------------------------------------------------------------------------------------<
 import math
 
-def get_bytes(size_str:str) -> float:
+
+def get_bytes(size_str: str) -> float:
     if size_str.isnumeric():
         total_bytes = float(size_str)
     else:
@@ -156,9 +174,15 @@ def get_bytes(size_str:str) -> float:
             total_bytes *= 1000000
         elif "G" in size_str:
             total_bytes *= 1000000000
-    return total_bytes       
+    return total_bytes
+
 
 def nz(size_bytes) -> str:
+    """
+    Humanize data meassure
+    :param size_bytes:
+    :return:
+    """
     if size_bytes == 0:
         return "0.0 B"
     size_name = ("B", "KB", "MB", "GB")
@@ -167,9 +191,34 @@ def nz(size_bytes) -> str:
     s = round(size_bytes / p, 2)
     return "%s %s" % (s, size_name[i])
 
-def nd(segundos:'int') -> str:
+
+def nd(segundos: 'int') -> str:
+    """
+    Humanize time
+    :param segundos:
+    :return:
+    """
     horas = int(segundos // 3600)
     segundos -= horas * 3600
     minutos = int(segundos // 60)
     segundos -= minutos * 60
     return "%02d:%02d:%02d" % (horas, minutos, segundos)
+
+def get_file_type(file:FileNode)->None:
+    ext = os.path.splitext(file.filename)
+    ext = ext[1].replace(".", "")
+    ext = ext.lower()
+    if ext in AUDIO_EXT:
+        file.type = AUDIO
+    elif ext in COMPRESSED_EXT:
+        file.type = COMPRESSED
+    elif ext in DOCS_EXT:
+        file.type = TEXT
+    elif ext in EXEC_EXT:
+        file.type = EXEC
+    elif ext in IMG_EXT:
+        file.type = IMAGE
+    elif ext in VIDEO_EXT:
+        file.type = MOVIE
+    else:
+        file.type = UNKNOWN

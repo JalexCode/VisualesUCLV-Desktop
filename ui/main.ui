@@ -99,11 +99,25 @@
     </property>
     <widget class="QMenu" name="menuExportar_repositorio_local">
      <property name="title">
-      <string>Exportar repositorio local</string>
+      <string>Exportar</string>
      </property>
-     <addaction name="export_local_repo_as_txt_action"/>
+     <widget class="QMenu" name="menuRepositorio">
+      <property name="title">
+       <string>Repositorio</string>
+      </property>
+      <addaction name="export_local_repo_as_txt_action"/>
+     </widget>
+     <widget class="QMenu" name="menuEnlaces_2">
+      <property name="title">
+       <string>Enlaces</string>
+      </property>
+      <addaction name="actionArchivos_del_directorio_2"/>
+     </widget>
+     <addaction name="menuRepositorio"/>
+     <addaction name="menuEnlaces_2"/>
     </widget>
     <addaction name="menuExportar_repositorio_local"/>
+    <addaction name="show_download_manager_action"/>
     <addaction name="separator"/>
     <addaction name="quit_action"/>
    </widget>
@@ -191,6 +205,21 @@
   <action name="export_local_repo_as_txt_action">
    <property name="text">
     <string>TXT</string>
+   </property>
+  </action>
+  <action name="show_download_manager_action">
+   <property name="text">
+    <string>Gestionador de descargas</string>
+   </property>
+  </action>
+  <action name="actionArchivos_del_directorio">
+   <property name="text">
+    <string>Archivos del directorio</string>
+   </property>
+  </action>
+  <action name="actionArchivos_del_directorio_2">
+   <property name="text">
+    <string>Archivos del directorio</string>
    </property>
   </action>
  </widget>

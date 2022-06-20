@@ -4,16 +4,16 @@ from util.logger import SENT_TO_LOG
 
 DEFAULT_SETTINGS = {"last_modification_date":""}
 # QSettings object
-SETTINGS = QSettings(APP_ID)
+GENERAL_SETTINGS = QSettings(APP_ID, "Explorer")
 # Save settings method
 def SAVE_SETTINGS(key, value):
-    SETTINGS.setValue(key, value)
-    SETTINGS.sync()
+    GENERAL_SETTINGS.setValue(key, value)
+    GENERAL_SETTINGS.sync()
 # Restore by default settings method
 def RESTORE_BY_DEFAULT():
     try:
         for key in DEFAULT_SETTINGS.keys():
-            if SETTINGS.value(key) is None:
+            if GENERAL_SETTINGS.value(key) is None:
                 SAVE_SETTINGS(key, DEFAULT_SETTINGS[key])
     except Exception as e:
         print("Error reestableciendo configuracion")

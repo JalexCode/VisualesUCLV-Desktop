@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="types">
+    <file>images/rar.png</file>
+    <file>images/software.png</file>
     <file>images/pdf.png</file>
     <file>images/uknown.png</file>
     <file>images/audio.png</file>
@@ -8,6 +10,21 @@
     <file>images/video.png</file>
   </qresource>
   <qresource prefix="icons">
+    <file>images/export.png</file>
+    <file>images/report.png</file>
+    <file>images/txt.png</file>
+    <file>images/clipboard.png</file>
+    <file>images/del_all_.png</file>
+    <file>images/delete.png</file>
+    <file>images/history.png</file>
+    <file>images/htctasks.png</file>
+    <file>images/link.png</file>
+    <file>images/pause.png</file>
+    <file>images/play.png</file>
+    <file>images/stop.png</file>
+    <file>images/success_green.png</file>
+    <file>images/fail.png</file>
+    <file>images/settings.png</file>
     <file>images/perm_group_bookmarks.png</file>
     <file>images/save.png</file>
     <file>images/download.png</file>

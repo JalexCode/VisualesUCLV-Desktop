@@ -5,6 +5,8 @@ from io import StringIO
 
 import sys
 
+import certifi
+import urllib3
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QPixmap, QClipboard
 from PyQt5.QtWidgets import QAction, QLabel, QMenu, QProgressBar, QTableWidget, QToolButton, QLineEdit, QWidget, \
@@ -13,16 +15,19 @@ from PyQt5.QtWidgets import QAction, QLabel, QMenu, QProgressBar, QTableWidget, 
 
 from model.threads import SubTaskThread
 from ui.about_dialog import AboutDialog
+from ui.downloader import DownloadManager
 from ui.favorites_group_dock import FavoritesGroup
 from ui.preview_dock import PreviewDock
 from ui.text import *
 from util.logger import SENT_TO_LOG
-from util.settings import SETTINGS, SAVE_SETTINGS
+from util.settings import GENERAL_SETTINGS, SAVE_SETTINGS
 from util.util import *
 from util.const import *
 import webbrowser
 import ui.app_rc
 from ui.main import Ui_MainWindow
+
+urllib3.disable_warnings()
 
 LastStateRole = Qt.ItemDataRole.UserRole
 
@@ -43,8 +48,10 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         self.check_tree_is_empty()
 
     def connections(self):
+        # tree widget connections
         self.treeWidget.itemExpanded.connect(self.fill_node)
         self.treeWidget.itemClicked.connect(self.async_get_page)
+        # table widget connections
         self.tableWidget.itemClicked.connect(
             self.show_file_details_on_state_bar)
         #self.tableWidget.cellChanged.connect(self.set_node_as_downloaded)
@@ -57,6 +64,14 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             self.export_tree_as_txt)
         #
         self.about_action.triggered.connect(self.show_about)
+        #
+        self.show_download_manager_action.triggered.connect(lambda: self.activate_download_manager_window(True))
+
+    def activate_download_manager_window(self, show=False):
+        if self.download_manager_window is None:
+            self.download_manager_window = DownloadManager(self)
+        if show:
+            self.download_manager_window.show()
 
     def export_tree_as_txt(self):
         archivo, _ = QFileDialog.getSaveFileName(
@@ -70,6 +85,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         # 
         self.favorites_group_window = None
         self.preview_dock = None
+        self.download_manager_window = None
         # progress bar
         self.progress = QProgressBar()
         self.progress.setValue(0)
@@ -171,8 +187,16 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         self.download_file_button.setToolTip(
             "Descargar elemento seleccionado")
         self.download_file_button.setIcon(QIcon(":/icons/images/download.png"))
-        self.download_file_button.clicked.connect(self.download_file)
+        self.download_file_button.clicked.connect(self.add_to_download_queue)
         self.toolbar.addWidget(self.download_file_button)
+        #
+        self.export_as_txt_button = QToolButton()
+        self.export_as_txt_button.setText("Exportar como TXT")
+        self.export_as_txt_button.setToolTip(
+            "Exporta todos los enlaces de la carpeta hacia un archivo de texto plano")
+        self.export_as_txt_button.setIcon(QIcon(":/icons/images/txt.png"))
+        self.export_as_txt_button.clicked.connect(self.export_as_txt)
+        self.toolbar.addWidget(self.export_as_txt_button)
         #
         self.toolbar.setWindowTitle("Barra de herramientas")
         self.addToolBar(Qt.ToolBarArea.LeftToolBarArea, self.toolbar)
@@ -181,6 +205,13 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         self.message_label.setAlignment(Qt.AlignCenter | Qt.AlignCenter)
         self.message_label.setVisible(False)
         self.gridLayout.addWidget(self.message_label)
+
+    def export_as_txt(self):
+        file, _ = QFileDialog.getSaveFileName(self, "Exportar enlaces como archivo de texto", "", "Archivo de texto (*.txt)")
+        if file:
+            txt = "\n".join(self.url_list)
+            with open(file, mode="w", encoding="UTF-8") as txt_file:
+                txt_file.write(txt)
 
     def set_node_as_favorite(self):
         '''
@@ -409,7 +440,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
 
     def download_file(self):
         '''
-        Run a download thread
+        [DEPREACATED] Run a download thread
         '''
         i = self.tableWidget.currentRow()
         if i > -1:
@@ -418,7 +449,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 #
                 node:Node = self.tree.get_node(href)
                 if node is None:
-                    raise FileNotFounded("No se encontró '{href}'")
+                    raise FileNotFounded(f"No se encontró '{href}'")
                 file:FileNode = node.tag
                 #
                 print(f"Descargando archivo {file.filename}")
@@ -442,6 +473,43 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 print("\t" + str(e.args))
                 self.state_label.setText(CONNECTION_FAIL)
 
+    def add_to_download_queue(self):
+        '''
+        Add file or folder content to download queue in the Download Manager
+        '''
+        if self.treeWidget.hasFocus():
+            selected_item: QTreeWidgetItem = self.treeWidget.currentItem()
+            if selected_item is not None:
+                #
+                files_list = []
+                for url in self.url_list:
+                    node: Node = self.tree.get_node(url)
+                    if node is not None:
+                        file: FileNode = node.tag
+                        files_list.append(file)
+                #
+                self.activate_download_manager_window()
+                self.download_manager_window.add_collection_to_queue(files_list)
+                self.download_manager_window.show_and_load()
+        elif self.tableWidget.hasFocus():
+            i:int = self.tableWidget.currentRow()
+            if i > -1:
+                try:
+                    href = self.url_list[i]
+                    #
+                    node:Node = self.tree.get_node(href)
+                    if node is None:
+                        raise FileNotFounded(f"No se encontró '{href}'")
+                    file:FileNode = node.tag
+                    #
+                    self.activate_download_manager_window()
+                    self.download_manager_window.add_file_to_queue(file)
+                    self.download_manager_window.show_and_load()
+                except Exception as e:
+                    print(f"\tDescarga fallida [{file}]")
+                    print("\t" + str(e.args))
+                    self.state_label.setText(CONNECTION_FAIL)
+
     def request_remote_repo_file(self):
         if not self.work_in_progress:
             print(f"Solicitando archivo {LISTADO_HTML_FILE}")
@@ -451,8 +519,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 self.thread.info_signal.connect(
                     lambda text: self.state_label.setText(text))
                 self.thread.error_signal.connect(
-                    lambda error: self.error("Solicitando archivo remoto", "La petición no se realizó con éxito",
-                                             error))
+                    lambda error: self.request_remote_repo_file_error(error=error))
                 self.thread.finish_signal.connect(
                     lambda response: self.download_remote_repo(response))
                 thread = threading.Thread(target=self.thread.request_file)
@@ -464,9 +531,14 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         else:
             self.notificate_work_in_progress()
 
+    def request_remote_repo_file_error(self, error):
+        self.set_work_in_progress(False)
+        self.error("Solicitando archivo remoto", "La petición no se realizó con éxito",
+                   error)
+
     def download_remote_repo(self, file: FileNode):
         # get last modified setting
-        last_modified = SETTINGS.value("last_modification_date", type=str)
+        last_modified = GENERAL_SETTINGS.value("last_modification_date", type=str)
         # get last modified date from header
         current_last_modified = file.modification_date
         #
@@ -574,12 +646,16 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             lambda text: self.state_label.setText(text))
         # self.thread.progress_signal.connect(self.set_progress)
         self.thread.error_signal.connect(
-            lambda error: self.error("Solicitando archivo remoto", "La petición no concluyó exitosamente", error))
+            lambda error: self.get_light_weight_file_error(error=error))
         self.thread.finish_signal.connect(
             lambda data: self.show_preview_dock(type=type, data=data))
         thread = threading.Thread(target=self.thread.get_light_weight_file,
                                   args=(url,))
         thread.start()
+
+    def get_light_weight_file_error(self, error):
+        self.set_work_in_progress(False)
+        self.error("Solicitando archivo remoto", "La petición no concluyó exitosamente", error)
 
     def show_preview_dock(self, type: str, data):
         self.set_work_in_progress(False)
@@ -623,7 +699,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             # get node by column 1 text in QTreeWidgetItem
             node: Node = self.tree.get_node(folder_path)
             #
-            if not have_children(self.tree, node):
+            if not has_children(self.tree, node):
                 try:
                     if not node.tag.is_empty:
                         self.set_work_in_progress(True)
@@ -808,14 +884,16 @@ def excepthook(exc_type, exc_value, tracebackobj):
 
     SENT_TO_LOG(msg, "ERROR")
 
-
 sys.excepthook = excepthook
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    # ssl cert file
+    os.environ["SSL_CERT_FILE"] = certifi.where()
+    # app dark style
     import qdarkstyle
-
     app.setStyleSheet(qdarkstyle.load_stylesheet())
+    # start
     visuales = VisualesUCLV()
     visuales.show()
     app.exec()
