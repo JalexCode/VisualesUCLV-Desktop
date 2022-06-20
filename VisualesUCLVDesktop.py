@@ -247,8 +247,6 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         current_state = item.checkState()
         if current_state != last_state:
             checked = current_state == Qt.CheckState.Checked
-            print(row)
-            print(self.url_list)
             #
             node: Node = self.tree.get_node(self.url_list[row])
             # update Downloaded attribute in node
@@ -354,7 +352,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             print(f"Cargando archivo {TREE_DATA_FILE_NAME}")
             self.tree = load_all_dirs_n_files_tree()
             print("Llenando árbol...")
-            self.fill_tree(None, self.tree.get_node(self.tree.root))
+            self.fill_tree(qparent=None, node=self.tree.get_node(self.tree.root))
             return True
         except TreeFileDoesntExistException as e:
             print(f"\tTarea fallida [{TREE_DATA_FILE_NAME}]")
@@ -394,15 +392,18 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             self.notificate_work_in_progress()
 
     def success_read_html_fil(self, tree):
-        self.state_label.setText("Datos cargados")
-        self.set_work_in_progress(False)
-        self.show_hide_message(False)
-        #
-        self.tree = tree
-        #
-        self.check_tree_is_empty()
-        #
-        self.fill_tree(None, self.tree.get_node(self.tree.root))
+        try:
+            self.state_label.setText("Datos cargados")
+            self.set_work_in_progress(False)
+            self.show_hide_message(False)
+            #
+            self.tree = tree
+            #
+            self.check_tree_is_empty()
+            #
+            self.fill_tree(qparent=None, node=self.tree.get_node(self.tree.root))
+        except Exception as e:
+            print(e.args)
 
     def error_read_html_fil(self, error):
         message = NO_LOCAL_DATA
@@ -497,6 +498,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             if i > -1:
                 try:
                     href = self.url_list[i]
+
                     #
                     node:Node = self.tree.get_node(href)
                     if node is None:
@@ -523,7 +525,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                     lambda error: self.request_remote_repo_file_error(error=error))
                 self.thread.finish_signal.connect(
                     lambda response: self.download_remote_repo(response))
-                thread = threading.Thread(target=self.thread.request_file)
+                thread = threading.Thread(target=self.thread.request_listado_file)
                 thread.start()
             except Exception as e:
                 print(f"\tTarea fallida [{DIRS_FILE_NAME}]")
@@ -544,6 +546,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         current_last_modified = file.modification_date
         #
         file_size = file.size
+        print(file.size)
         #
         if last_modified:
             last_modified = datetime.fromisoformat(last_modified)
@@ -788,7 +791,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         self.tableWidget.resizeColumnsToContents()
 
     def fill_node(self, expanded_item: QTreeWidgetItem):
-        self.fill_tree(expanded_item, self.tree.get_node(
+        self.fill_tree(qparent=expanded_item, node=self.tree.get_node(
             expanded_item.text(1)))
 
     def error(self, place: str, text: str, exception: Exception = None):
@@ -806,23 +809,26 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 f"[{exception.__class__.__name__}] {str(exception.args)}")
         msg.exec_()
 
-    def fill_tree(self, parent: QTreeWidgetItem, node: Node):
+    def fill_tree(self, qparent: QTreeWidgetItem, node: Node):
         '''
         Add children to QTreeWidget
         '''
-        if parent is None:
-            self.treeWidget.clear()
-            qchild = QTreeWidgetItem(["Visuales UCLV", str(node.tag) + "/"])
-            root_item = QTreeWidgetItem(["-", "None"])
-            qchild.addChild(root_item)
-            self.treeWidget.insertTopLevelItem(0, qchild)
-            # expand root node
-            self.treeWidget.setCurrentItem(root_item)#expand(self.treeWidget.indexFromItem(root_item, 0))
+        if qparent is None:
+            try:
+                self.treeWidget.clear()
+                qchild = QTreeWidgetItem(["Visuales UCLV", str(node.tag) + "/"])
+                root_item = QTreeWidgetItem(["-", "None"])
+                qchild.addChild(root_item)
+                self.treeWidget.insertTopLevelItem(0, qchild)
+                # expand root node
+                self.treeWidget.expand(self.treeWidget.indexFromItem(qchild, 0))
+            except Exception as e:
+                print(e.args)
             return
         if not node.is_leaf():
-            if parent.child(0).text(1) == "None":
+            if qparent.child(0).text(1) == "None":
                 # remove invisible item
-                parent.removeChild(parent.child(0))
+                qparent.removeChild(qparent.child(0))
                 for child in self.tree.children(node.identifier):
                     if not isinstance(child.tag, FileNode):
                         qchild = QTreeWidgetItem(
@@ -834,7 +840,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                         # if child is not empty, add an invisible item
                         if not child.is_leaf():
                             qchild.addChild(QTreeWidgetItem(["-", "None"]))
-                        parent.addChild(qchild)
+                        qparent.addChild(qchild)
 
     def closeEvent(self, event) -> None:
         if not self.work_in_progress:
