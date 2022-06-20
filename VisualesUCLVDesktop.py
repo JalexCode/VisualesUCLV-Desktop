@@ -276,8 +276,9 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         if self.tree.size(0):
             self.clear_table()
             is_visible = self.search_container.isVisible()
+            search_mode = self.search_button.isChecked()
             # set horizontal header
-            if is_visible:
+            if search_mode:
                 # search mode
                 self.tableWidget.setColumnCount(5)
                 self.tableWidget.setHorizontalHeaderLabels(
