@@ -1,5 +1,5 @@
 # VisualesUCLV-Desktop
-VisualesUCLV-Desktop es una aplicación de escritorio para la plataforma Windows que permite al usuario explorar el contenido del ftp http://visuales.uclv.cu. 
+*VisualesUCLV-Desktop* es una aplicación de escritorio para la plataforma Windows que permite al usuario explorar el contenido del ftp http://visuales.uclv.cu. 
 
 # Características:
 * Acceso rápido y bajo demanda a todos los directorios del repositorio
@@ -16,25 +16,38 @@ VisualesUCLV-Desktop es una aplicación de escritorio para la plataforma Windows
 * Habilitar la descarga de archivos y carpetas
 * Crear un administrador de descargas para poder obtener archivos y carpetas sin necesidad de acceder al navegador o instalar un descargador
 
-### Capturas de la aplicación
+# Dependencias
+````
+lxml
+beautifulsoup4~=4.6.3
+treelib
+PyQt5
+requests~=2.19.1
+certifi~=2018.8.24
+pySmartDL>=1.3.4
+psutil>=5.4.7
+urllib3>=1.23
+````
 
-# Pantalla principal:
+# Capturas de la aplicación
+
+### Pantalla principal:
 ![Pantalla principal](https://github.com/JalexCode/VisualesUCLV-Desktop/blob/master/screenshots/main.png?raw=true)
 
-# Barra de herramientas de la pantalla principal:
+### Barra de herramientas de la pantalla principal:
 ![Barra de herramientas de la pantalla principal](https://github.com/JalexCode/VisualesUCLV-Desktop/blob/master/screenshots/Main_toolbar.png?raw=true)
 
-# Favoritos:
+### Favoritos:
 ![Favoritos](https://github.com/JalexCode/VisualesUCLV-Desktop/blob/master/screenshots/favorites.png?raw=true)
 
-# Buscador:
+### Buscador:
 ![Buscador](https://github.com/JalexCode/VisualesUCLV-Desktop/blob/master/screenshots/searcher.png?raw=true)
 
-# Descargador:
+### Descargador:
 ![Descargador](https://github.com/JalexCode/VisualesUCLV-Desktop/blob/master/screenshots/downloader.png?raw=true)
 
-# Barra de herramientas del descargador:
+### Barra de herramientas del descargador:
 ![Barra de herramientas del descargador](https://github.com/JalexCode/VisualesUCLV-Desktop/blob/master/screenshots/downloader_toolbar.png?raw=true)
 
-# Descargador efectuando la descarga de un archivo:
+### Descargador efectuando la descarga de un archivo:
 ![Descargador efectuando la descarga de un archivo](https://github.com/JalexCode/VisualesUCLV-Desktop/blob/master/screenshots/downloader_in_action.png?raw=true)
