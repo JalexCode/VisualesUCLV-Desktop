@@ -258,7 +258,7 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
         #
         def open_file():
             i = self.history_table.currentRow()
-            self.open_destiny(self.history_table.item(i, 2).text(), False, True)
+            self.open_destiny(file_path=self.history_table.item(i, 2).text(), folder=False, highlight=True)
         self.history_table.itemDoubleClicked.connect(lambda: open_file())
 
     def set_download_time(self):
@@ -535,11 +535,12 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
         event.ignore()
         self.hide()
 
-    def open_destiny(self, file_path, folder=False, highlight=False):
+    def open_destiny(self, file_path:str, folder=False, highlight=False):
+        file_path = file_path.replace("/", "\\")
+        print(file_path)
         try:
             CREATE_NO_WINDOW = 0x08000000
             if folder:
-                file_path = file_path.replace("/", "\\")
                 subprocess.Popen(['explorer.exe', file_path],
                                  stderr=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
@@ -556,7 +557,6 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
                                      creationflags=CREATE_NO_WINDOW)
 
                 else:
-                    file_path = file_path.replace("/", "\\")
                     subprocess.Popen(['cmd', '/C', 'start', file_path, file_path],
                                      stderr=subprocess.PIPE,
                                      stdout=subprocess.PIPE,
