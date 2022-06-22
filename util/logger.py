@@ -4,17 +4,17 @@ import logging
 # create a directory if it does not exist
 import os
 
-from util.const import APP_ID, APP_NAME
+from util.const import AppInfo
 
 # log file address
-log_file = os.path.join(os.getcwd(), f'{APP_ID}.log')
+log_file = os.path.join(os.getcwd(), f'{AppInfo.ID}.log')
 
 if not os.path.isfile(log_file):
     with open(log_file, "w") as log_f:
         log_f.write("")
 
 # define logging object
-log_obj = logging.getLogger(APP_NAME)
+log_obj = logging.getLogger(AppInfo.NAME)
 log_obj.setLevel(logging.INFO)
 
 # create a file handler
@@ -23,11 +23,11 @@ handler.setLevel(logging.DEBUG)
 
 # create a logging format
 logging.basicConfig(
-        format='%(asctime)s %(levelname)s: %(message)s'
-        ' - %(lineno)s: %(module)s',
-        datefmt='%Y/%m/%d %H:%M:%S',
-        filename=log_file, level=logging.INFO
-    )
+    format='%(asctime)s %(levelname)s: %(message)s'
+           ' - %(lineno)s: %(module)s',
+    datefmt='%Y/%m/%d %H:%M:%S',
+    filename=log_file, level=logging.INFO
+)
 formatter = logging.Formatter(
     '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
@@ -35,8 +35,9 @@ handler.setFormatter(formatter)
 # add the handlers to the logger
 log_obj.addHandler(handler)
 
+
 # print logs in the logfile
-def SENT_TO_LOG(text="", type="ERROR"):
+def send_to_log(text="", type="ERROR"):
     if type == "INFO":
         log_obj.info(text)
     elif type == "ERROR":
@@ -48,9 +49,13 @@ def SENT_TO_LOG(text="", type="ERROR"):
     else:
         log_obj.warning(text)
 
+
 # print logs on console
-def SHOW_CONSOLE_LOG(order, text, tab=0):
+def show_console_log(order, text, tab=0):
     strg = f"[{order}] {text}"
-    if tab: strg = "\t"*tab + "- " + strg
+
+    if tab:
+        strg = "\t" * tab + "- " + strg
+
     print(strg)
 # > ------------------------------------------------------------------------------------------------------------------

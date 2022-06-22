@@ -285,17 +285,20 @@ class Ui_MainWindow(object):
         self.actionAyuda.setObjectName("actionAyuda")
         self.actionAcerca_de = QtWidgets.QAction(MainWindow)
         icon4 = QtGui.QIcon()
-        icon4.addPixmap(QtGui.QPixmap("../Documents/Mis Proyectos/FreeS3 Downloader v2/recursos/about.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon4.addPixmap(QtGui.QPixmap("../Documents/Mis Proyectos/FreeS3 Downloader v2/recursos/about.png"),
+                        QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionAcerca_de.setIcon(icon4)
         self.actionAcerca_de.setObjectName("actionAcerca_de")
         self.cargar_datos_perfil = QtWidgets.QAction(MainWindow)
         icon5 = QtGui.QIcon()
-        icon5.addPixmap(QtGui.QPixmap("../Documents/Mis Proyectos/FreeS3 Downloader v2/recursos/default_user.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon5.addPixmap(QtGui.QPixmap("../Documents/Mis Proyectos/FreeS3 Downloader v2/recursos/default_user.png"),
+                        QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.cargar_datos_perfil.setIcon(icon5)
         self.cargar_datos_perfil.setObjectName("cargar_datos_perfil")
         self.actionEliminar_links_vencidos = QtWidgets.QAction(MainWindow)
         icon6 = QtGui.QIcon()
-        icon6.addPixmap(QtGui.QPixmap("../Documents/Mis Proyectos/FreeS3 Downloader v2/recursos/Emoji Symbols-70.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon6.addPixmap(QtGui.QPixmap("../Documents/Mis Proyectos/FreeS3 Downloader v2/recursos/Emoji Symbols-70.png"),
+                        QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionEliminar_links_vencidos.setIcon(icon6)
         self.actionEliminar_links_vencidos.setObjectName("actionEliminar_links_vencidos")
         self.actionActivar = QtWidgets.QAction(MainWindow)
@@ -304,12 +307,14 @@ class Ui_MainWindow(object):
         self.actionDesactivar.setObjectName("actionDesactivar")
         self.save_list = QtWidgets.QAction(MainWindow)
         icon7 = QtGui.QIcon()
-        icon7.addPixmap(QtGui.QPixmap("../Documents/Mis Proyectos/FreeS3 Downloader v2/recursos/Emoji Objects-29.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon7.addPixmap(QtGui.QPixmap("../Documents/Mis Proyectos/FreeS3 Downloader v2/recursos/Emoji Objects-29.png"),
+                        QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.save_list.setIcon(icon7)
         self.save_list.setObjectName("save_list")
         self.load_list = QtWidgets.QAction(MainWindow)
         icon8 = QtGui.QIcon()
-        icon8.addPixmap(QtGui.QPixmap("../Documents/Mis Proyectos/FreeS3 Downloader v2/recursos/Emoji Objects-107.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon8.addPixmap(QtGui.QPixmap("../Documents/Mis Proyectos/FreeS3 Downloader v2/recursos/Emoji Objects-107.png"),
+                        QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.load_list.setIcon(icon8)
         self.load_list.setObjectName("load_list")
         self.actionBarra_de_t_tulo = QtWidgets.QAction(MainWindow)
@@ -324,19 +329,23 @@ class Ui_MainWindow(object):
         self.actionModo_Pura_Descarga.setObjectName("actionModo_Pura_Descarga")
         self.actionExportar = QtWidgets.QAction(MainWindow)
         icon9 = QtGui.QIcon()
-        icon9.addPixmap(QtGui.QPixmap("../Documents/Mis Proyectos/FreeS3 Downloader v2/recursos/icon_export_n@2x.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon9.addPixmap(QtGui.QPixmap("../Documents/Mis Proyectos/FreeS3 Downloader v2/recursos/icon_export_n@2x.png"),
+                        QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.actionExportar.setIcon(icon9)
         self.actionExportar.setObjectName("actionExportar")
         self.vaciar_informe = QtWidgets.QAction(MainWindow)
         icon10 = QtGui.QIcon()
-        icon10.addPixmap(QtGui.QPixmap("../Documents/Mis Proyectos/FreeS3 Downloader v2/recursos/Emoji Symbols-134.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon10.addPixmap(
+            QtGui.QPixmap("../Documents/Mis Proyectos/FreeS3 Downloader v2/recursos/Emoji Symbols-134.png"),
+            QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.vaciar_informe.setIcon(icon10)
         self.vaciar_informe.setObjectName("vaciar_informe")
         self.actionPor_nombre = QtWidgets.QAction(MainWindow)
         self.actionPor_nombre.setObjectName("actionPor_nombre")
         self.ordenar_por_nombre = QtWidgets.QAction(MainWindow)
         icon11 = QtGui.QIcon()
-        icon11.addPixmap(QtGui.QPixmap("../Documents/Mis Proyectos/FreeS3 Downloader v2/recursos/sort_ascending.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon11.addPixmap(QtGui.QPixmap("../Documents/Mis Proyectos/FreeS3 Downloader v2/recursos/sort_ascending.png"),
+                         QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.ordenar_por_nombre.setIcon(icon11)
         self.ordenar_por_nombre.setObjectName("ordenar_por_nombre")
         self.menuInforme.addAction(self.vaciar_informe)
@@ -345,17 +354,20 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(0)
-        self.salir_action.triggered.connect(MainWindow.close) # type: ignore
+        self.salir_action.triggered.connect(MainWindow.close)  # type: ignore
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Visuales UCLV Download Manager"))
-        self.total_size_queue_label.setToolTip(_translate("MainWindow", "<html><head/><body><p>Tamaño total de la descarga</p></body></html>"))
+        self.total_size_queue_label.setToolTip(
+            _translate("MainWindow", "<html><head/><body><p>Tamaño total de la descarga</p></body></html>"))
         self.total_size_queue_label.setText(_translate("MainWindow", "Tamaño total: 0.0 Mb"))
-        self.download_time_label.setToolTip(_translate("MainWindow", "<html><head/><body><p>Tiempo transcurrido de descarga</p></body></html>"))
+        self.download_time_label.setToolTip(
+            _translate("MainWindow", "<html><head/><body><p>Tiempo transcurrido de descarga</p></body></html>"))
         self.download_time_label.setText(_translate("MainWindow", "Tiempo transcurrido: -"))
-        self.free_space.setToolTip(_translate("MainWindow", "<html><head/><body><p>Espacio disponible en el disco donde se encuentra la carpeta de las Descargas</p></body></html>"))
+        self.free_space.setToolTip(_translate("MainWindow",
+                                              "<html><head/><body><p>Espacio disponible en el disco donde se encuentra la carpeta de las Descargas</p></body></html>"))
         self.free_space.setText(_translate("MainWindow", "Espacio disponible: -"))
         item = self.tableWidget.horizontalHeaderItem(1)
         item.setText(_translate("MainWindow", "Nombre"))
@@ -387,26 +399,32 @@ class Ui_MainWindow(object):
         item.setText(_translate("MainWindow", "Descripción"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("MainWindow", "Informe de errores"))
         self.groupBox_2.setTitle(_translate("MainWindow", "Tras descargar"))
-        self.alert_when_finish_checkb.setTitle(_translate("MainWindow", "Alertar que finalizó la descarga con un sonido"))
+        self.alert_when_finish_checkb.setTitle(
+            _translate("MainWindow", "Alertar que finalizó la descarga con un sonido"))
         self.change_song_button.setText(_translate("MainWindow", "Cambiar"))
         self.groupBox_3.setTitle(_translate("MainWindow", "Descargas"))
         self.label_3.setText(_translate("MainWindow", "Cantidad de hilos:"))
-        self.max_threads_threads.setToolTip(_translate("MainWindow", "<html><head/><body><p>Cantidad de descargas que se realizarán a la vez</p><p>Por defecto: 10</p></body></html>"))
+        self.max_threads_threads.setToolTip(_translate("MainWindow",
+                                                       "<html><head/><body><p>Cantidad de descargas que se realizarán a la vez</p><p>Por defecto: 10</p></body></html>"))
         self.label_6.setText(_translate("MainWindow", "Si el archivo existe:"))
-        self.if_file_already_exists_combo.setToolTip(_translate("MainWindow", "<html><head/><body><p>Acción a llevar a cabo si el archivo a descargar ya existe en el directorio especificado</p></body></html>"))
+        self.if_file_already_exists_combo.setToolTip(_translate("MainWindow",
+                                                                "<html><head/><body><p>Acción a llevar a cabo si el archivo a descargar ya existe en el directorio especificado</p></body></html>"))
         self.if_file_already_exists_combo.setItemText(0, _translate("MainWindow", "Sobreescribir"))
         self.if_file_already_exists_combo.setItemText(1, _translate("MainWindow", "Omitir"))
         self.if_file_already_exists_combo.setItemText(2, _translate("MainWindow", "Renombrar"))
         self.label_8.setText(_translate("MainWindow", "Al detener las descargas:"))
-        self.when_downloads_stops_combo.setToolTip(_translate("MainWindow", "<html><head/><body><p>Acción a llevar a cabo con los archivos descargados a medias al detener las descargas</p></body></html>"))
+        self.when_downloads_stops_combo.setToolTip(_translate("MainWindow",
+                                                              "<html><head/><body><p>Acción a llevar a cabo con los archivos descargados a medias al detener las descargas</p></body></html>"))
         self.when_downloads_stops_combo.setItemText(0, _translate("MainWindow", "Preguntar qué hacer"))
         self.when_downloads_stops_combo.setItemText(1, _translate("MainWindow", "Eliminar los archivos incompletos"))
         self.when_downloads_stops_combo.setItemText(2, _translate("MainWindow", "No hacer nada"))
         self.label_5.setText(_translate("MainWindow", "Cantidad de intentos:"))
-        self.attemps_limit_spin.setToolTip(_translate("MainWindow", "<html><head/><body><p>Cantidad de intentos para lograr un descarga exitosa</p><p>Por defecto: 10</p></body></html>"))
+        self.attemps_limit_spin.setToolTip(_translate("MainWindow",
+                                                      "<html><head/><body><p>Cantidad de intentos para lograr un descarga exitosa</p><p>Por defecto: 10</p></body></html>"))
         self.label_7.setText(_translate("MainWindow", "Carpeta de descargas:"))
         self.change_destiny_button.setText(_translate("MainWindow", "Cambiar"))
-        self.destiny_folder_input.setToolTip(_translate("MainWindow", "<html><head/><body><p>Directorio en el que se guardará el contenido descargado</p></body></html>"))
+        self.destiny_folder_input.setToolTip(_translate("MainWindow",
+                                                        "<html><head/><body><p>Directorio en el que se guardará el contenido descargado</p></body></html>"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("MainWindow", "Opciones"))
         self.menuInforme.setTitle(_translate("MainWindow", "Informe"))
         self.toolBar.setWindowTitle(_translate("MainWindow", "toolBar"))
@@ -431,11 +449,11 @@ class Ui_MainWindow(object):
         self.vaciar_informe.setText(_translate("MainWindow", "Vaciar la Lista"))
         self.actionPor_nombre.setText(_translate("MainWindow", "Por nombre"))
         self.ordenar_por_nombre.setText(_translate("MainWindow", "Ordenar elementos por nombre"))
-import ui.app_rc
 
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()

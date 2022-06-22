@@ -1,8 +1,7 @@
-from concurrent.futures.thread import ThreadPoolExecutor
-from queue import Queue
 from typing import List
 
 from PyQt5.QtCore import QObject, pyqtSignal
+
 from model.file_node import FileNode
 from model.process import Request
 from util.const import *
@@ -23,7 +22,7 @@ class SubTaskThread(QObject):
         request.signals(self.info_signal, self.progress_signal, self.error_signal, self.finish_signal)
         request.request_file()
 
-    def download_file(self, file: FileNode, destiny=DOWNLOAD_DIR):
+    def download_file(self, file: FileNode, destiny=Paths.DOWNLOAD_DIR):
         request = Request()
         request.signals(self.info_signal, self.progress_signal, self.error_signal, self.finish_signal)
         request.download_file(file=file, destiny=destiny)
@@ -60,7 +59,7 @@ class DownloadThread(QObject):
         QObject.__init__(self)
         self._parent = parent
 
-    def download(self, urls: List[FileNode], dest: str = DOWNLOAD_DIR):
+    def download(self, urls: List[FileNode], dest: str = Paths.DOWNLOAD_DIR):
         """
         Downloads all files in queue
         :param urls:
@@ -77,7 +76,7 @@ class DownloadThread(QObject):
             i += 1
         self.finish_all_signal.emit()
 
-    def download_async(self, i:int, file: FileNode, dest: str = DOWNLOAD_DIR, urls: List[FileNode]=[]):
+    def download_async(self, i: int, file: FileNode, dest: str = Paths.DOWNLOAD_DIR, urls: List[FileNode] = []):
         """
         Downloads one file
         :param i:
@@ -91,14 +90,15 @@ class DownloadThread(QObject):
         url = file.href
         try:
             #
-            download = SmartDL(url, progress_bar=False, dest=dest, verify=False, timeout=TIMEOUT, threads=THREADS)
-            download.attemps_limit = RETRY
+            download = SmartDL(url, progress_bar=False, dest=dest, verify=False, timeout=AppSettings.TIMEOUT,
+                               threads=AppSettings.THREADS)
+            download.attemps_limit = AppSettings.RETRY
             download.start(blocking=False)
             #
             if not file.size:
                 file.size = download.filesize
                 self.file_size_signal.emit(i, download.filesize)
-            #if not file.type:
+            # if not file.type:
             #    self.file_type_signal.emit(i, download.file_type)
             #
             while not download.isFinished():
@@ -112,9 +112,10 @@ class DownloadThread(QObject):
                 elif self._parent.state == STOP_ALL:
                     download.stop()
                 #
-                self.progress_signal.emit(i, download.get_status(), download.get_dl_size(human=True), download.get_progress() * 100,
+                self.progress_signal.emit(i, download.get_status(), download.get_dl_size(human=True),
+                                          download.get_progress() * 100,
                                           download.get_speed(human=True), download.get_eta(human=True))
-                time.sleep(WAIT)
+                time.sleep(AppSettings.WAIT)
             if download.isSuccessful():
                 self.finish_one_task_signal.emit(i, download.get_status(), file, download)
             else:
