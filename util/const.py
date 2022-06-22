@@ -17,7 +17,8 @@ APP_ID = "_".join(APP_NAME.split()).lower()
 __version_major__ = 0
 __version_minor__ = 4
 __version_micro__ = 0
-__version__ = "{}.{}.{}".format(__version_major__, __version_minor__, __version_micro__)
+VERSION = "{}.{}.{}".format(__version_major__, __version_minor__, __version_micro__)
+# info
 COLABORATORS = "Rolando Juan Rio Garaboa [@R0land013]"
 ABOUT = f"""{APP_NAME} funciona como explorador local del FTP {VISUALES_UCLV_URL}, el cual tiene mucha demanda por los internautas cubanos quienes acceden diariamente en busca de las series que siguen, las películas en estreno y, en general, el sin fin de materiales audiovisuales que en ese repositorio se encuentran. Este programa tiene como fin facilitar la exploración del contenido de este repositorio remoto.
 Características:
