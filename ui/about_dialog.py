@@ -10,6 +10,6 @@ class AboutDialog(Ui_Dialog, QDialog):
         #
         self.setWindowIcon(QIcon(":/icons/images/start.ico"))
         #
-        self.app_name.setText(f"{APP_NAME} v{__version__}")
+        self.app_name.setText(f"{APP_NAME} v{VERSION}")
         self.colaborators.setPlainText(COLABORATORS)
         self.about.setPlainText(ABOUT)
