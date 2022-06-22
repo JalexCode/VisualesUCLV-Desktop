@@ -48,6 +48,7 @@ class Request:
                             self.info_signal.emit("Datos remotos obtenidos")
                             self.finish_signal.emit(FileNode(filename=DIRS_FILE_NAME, modification_date=modificated_date, size=size, href=LISTADO_HTML_FILE, type=TEXT)) #response.headers['Last-Modified']
                             return
+                    self.error_signal.emit(Exception("No se obtuvieron los datos del listado"))
                 else:
                     raise BadResponseException(response.status_code)
         except Exception as error:

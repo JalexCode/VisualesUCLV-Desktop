@@ -1,29 +1,31 @@
-X Agregar un visor de imagenes y texto para previsualizar
-Agregar menu contextual a las tablas favoritos y principal para acceder a la ubicacion del archivo
-X Marcar Favoritos los archivos
-Marcar direcotrios como favoritos desde la tabala de buskeda y favoritos
-Agregar un buscador rapido en el arbol
-Al actualizar directories.visuales, proponer hacer copia de seguridad del arbol actual
-Agregar path de directorios al estilo Explorer de Windows para conocer la ubicacion actual
-X Agregar al menu contextual la opcion de Copiar URL
-X Agregar atributo 'Descargado' a FileNode, para tener en cuenta si el archivo fue descargado ya o no
+# TODO
 
-# DESCARGADOR
-X Posibilidad de exportar todos los links de los archivos de un directorio en TXT para poder descargarlos desde otro DESCARGADOR
-X Configurar destino de la descarga
-Descargas paralelas
-X Descargas multihilos
-X Posibilidad de pausar y reanudar las descargas individualmente y de manera general
-X Calculo del tamanno total de descarga
-Toolbar con botones para
-X pausar/reanudar
-X detener
-eliminar uno
-eliminar todos
-buscar
-abrir carpeta de destino
-guardar lista de descarga
-cargar lista guardada
-ordenar por nombre
+## General
+	[X] Agregar un visor de imagenes y texto para previsualizar
+	[ ] Agregar menu contextual a las tablas favoritos y principal para acceder a la ubicacion del archivo
+	[X] Marcar Favoritos los archivos
+	[ ] Marcar directorios como favoritos desde la tabla de busqueda y favoritos
+	[ ] Agregar un buscador rápido en el arbol
+	[ ] Al actualizar directories.visuales, proponer hacer copia de seguridad del arbol actual
+	[ ] Agregar breadcrumbs para conocer la ubicacion actual
+	[X] Agregar al menu contextual la opcion de Copiar URL
+	[X] Agregar atributo 'Descargado' a FileNode, para tener en cuenta si el archivo fue descargado ya o no
 
+## Descargador
+	[X] Posibilidad de exportar todos los links de los archivos de un directorio en TXT para poder descargarlos desde otro DESCARGADOR
+	[X] Configurar destino de la descarga
+	[ ] Descargas paralelas
+	[X] Descargas multihilos
+	[X] Posibilidad de pausar y reanudar las descargas individualmente y de manera general
+	[X] Calculo del tamanno total de descarga
 
+## Toolbar con botones para
+	[X] pausar/reanudar
+	[X] detener
+	[ ] eliminar uno
+	[ ] eliminar todos
+	[ ] buscar
+	[ ] abrir carpeta de destino
+	[ ] guardar lista de descarga
+	[ ] cargar lista guardada
+	[ ] ordenar por nombre
