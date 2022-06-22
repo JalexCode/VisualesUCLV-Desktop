@@ -38,8 +38,8 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         QMainWindow.__init__(self)
         self.setupUi(self)
         # init Tree
-        self.tree: Tree = Tree()
-        self.url_list = []
+        self._tree: Tree = Tree()
+        self._url_list = []
         #
         self.connections()
         self.add_some_elements_to_ui()
@@ -77,7 +77,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         archivo, _ = QFileDialog.getSaveFileName(
             self, "Guardar árbol de repositorio", "", "Archivo de texto (*.txt)")
         if archivo:
-            self.tree.save2file(archivo)
+            self._tree.save2file(archivo)
 
     def add_some_elements_to_ui(self):
         #
@@ -209,7 +209,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
     def export_as_txt(self):
         file, _ = QFileDialog.getSaveFileName(self, "Exportar enlaces como archivo de texto", "", "Archivo de texto (*.txt)")
         if file:
-            txt = "\n".join(self.url_list)
+            txt = "\n".join(self._url_list)
             with open(file, mode="w", encoding="UTF-8") as txt_file:
                 txt_file.write(txt)
 
@@ -218,11 +218,11 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         Toggle boolean value in Favorite attribute
         '''
         def update_node(nid: str):
-            node: Node = self.tree.get_node(nid)
+            node: Node = self._tree.get_node(nid)
             # update Favorite attribute in node
             tag = node.tag
             tag.favorite = not tag.favorite
-            self.tree.update_node(node.identifier, tag=tag)
+            self._tree.update_node(node.identifier, tag=tag)
             return tag
         if self.treeWidget.hasFocus():
             selected_item: QTreeWidgetItem = self.treeWidget.currentItem()
@@ -235,7 +235,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         elif self.tableWidget.hasFocus():
             current_row: int = self.tableWidget.currentRow()
             if current_row > -1:
-                tag = update_node(self.url_list[current_row])
+                tag = update_node(self._url_list[current_row])
                 if tag.favorite:
                     self.tableWidget.item(current_row, 0).setIcon(QIcon(":/icons/images/favorite.png"))
                 else:
@@ -248,11 +248,11 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         if current_state != last_state:
             checked = current_state == Qt.CheckState.Checked
             #
-            node: Node = self.tree.get_node(self.url_list[row])
+            node: Node = self._tree.get_node(self._url_list[row])
             # update Downloaded attribute in node
             tag = node.tag
             tag.downloaded = checked
-            self.tree.update_node(node.identifier, tag=tag)
+            self._tree.update_node(node.identifier, tag=tag)
             if tag.downloaded:
                 self.tableWidget.item(row, 0).setCheckState(Qt.CheckState.Checked)
                 #.setIcon(QIcon(":/icons/images/success.png"))
@@ -264,14 +264,14 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             self.favorites_group_window = FavoritesGroup(self)
             self.addDockWidget(
                 Qt.DockWidgetArea.RightDockWidgetArea, self.favorites_group_window)
-            self.favorites_group_window.load(self.tree)
+            self.favorites_group_window.load(self._tree)
         else:
             self.favorites_group_window.close()
             self.removeDockWidget(self.favorites_group_window)
             self.favorites_group_window = None
 
     def show_hide_search_widget(self):
-        if self.tree.size(0):
+        if self._tree.size(0):
             self.clear_table()
             is_visible = self.search_container.isVisible()
             search_mode = self.search_button.isChecked()
@@ -296,7 +296,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
 
     def deep_search(self):
         text = self.search_input.text()
-        result = search(self.tree, text)
+        result = search(self._tree, text)
         self.state_label.setText(f"Resultados: {len(result)}")
         #
         self.clear_table()
@@ -321,7 +321,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 self.tableWidget.setItem(row, 4, QTableWidgetItem(
                     node.tag.modification_date.strftime(DATE_FORMAT)))
                 # add to urls to list
-                self.url_list.append(node.tag.href)
+                self._url_list.append(node.tag.href)
             else:
                 icon_item = QTableWidgetItem()
                 pixmap = QPixmap(":/icons/images/folder.png")
@@ -336,12 +336,12 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 self.tableWidget.setItem(row, 3, QTableWidgetItem("-"))
                 self.tableWidget.setItem(row, 4, QTableWidgetItem("-"))
                 # add to urls to list
-                self.url_list.append(node.identifier)
+                self._url_list.append(node.identifier)
         # print(self.url_list)
         self.tableWidget.resizeColumnsToContents()
 
     def check_tree_is_empty(self):
-        is_empty = self.tree.size(0) == 0
+        is_empty = self._tree.size(0) == 0
         self.dockWidget.setVisible(not is_empty)
         self.tableWidget.setVisible(not is_empty)
         self.message_label.setVisible(is_empty)
@@ -350,9 +350,9 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         # load serialized tree file
         try:
             print(f"Cargando archivo {TREE_DATA_FILE_NAME}")
-            self.tree = load_all_dirs_n_files_tree()
+            self._tree = load_all_dirs_n_files_tree()
             print("Llenando árbol...")
-            self.fill_tree(qparent=None, node=self.tree.get_node(self.tree.root))
+            self.fill_tree(qparent=None, node=self._tree.get_node(self._tree.root))
             return True
         except TreeFileDoesntExistException as e:
             print(f"\tTarea fallida [{TREE_DATA_FILE_NAME}]")
@@ -397,11 +397,11 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             self.set_work_in_progress(False)
             self.show_hide_message(False)
             #
-            self.tree = tree
+            self._tree = tree
             #
             self.check_tree_is_empty()
             #
-            self.fill_tree(qparent=None, node=self.tree.get_node(self.tree.root))
+            self.fill_tree(qparent=None, node=self._tree.get_node(self._tree.root))
         except Exception as e:
             print(e.args)
 
@@ -447,9 +447,9 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         i = self.tableWidget.currentRow()
         if i > -1:
             try:
-                href = self.url_list[i]
+                href = self._url_list[i]
                 #
-                node:Node = self.tree.get_node(href)
+                node:Node = self._tree.get_node(href)
                 if node is None:
                     raise FileNotFounded(f"No se encontró '{href}'")
                 file:FileNode = node.tag
@@ -484,8 +484,8 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             if selected_item is not None:
                 #
                 files_list = []
-                for url in self.url_list:
-                    node: Node = self.tree.get_node(url)
+                for url in self._url_list:
+                    node: Node = self._tree.get_node(url)
                     if node is not None:
                         file: FileNode = node.tag
                         files_list.append(file)
@@ -494,19 +494,21 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 self.download_manager_window.add_collection_to_queue(files_list)
                 self.download_manager_window.show_and_load()
         elif self.tableWidget.hasFocus():
-            i:int = self.tableWidget.currentRow()
-            if i > -1:
+            selected_items = self.tableWidget.selectedIndexes()
+            #
+            if selected_items:
+                files = []
                 try:
-                    href = self.url_list[i]
-
-                    #
-                    node:Node = self.tree.get_node(href)
-                    if node is None:
-                        raise FileNotFounded(f"No se encontró '{href}'")
-                    file:FileNode = node.tag
+                    for item in selected_items:
+                        href = self._url_list[item.row()]
+                        #
+                        node:Node = self._tree.get_node(href)
+                        if node is not None:
+                            file:FileNode = node.tag
+                            files.append(file)
                     #
                     self.activate_download_manager_window()
-                    self.download_manager_window.add_file_to_queue(file)
+                    self.download_manager_window.add_collection_to_queue(files)
                     self.download_manager_window.show_and_load()
                 except Exception as e:
                     print(f"\tDescarga fallida [{file}]")
@@ -524,7 +526,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 self.thread.error_signal.connect(
                     lambda error: self.request_remote_repo_file_error(error=error))
                 self.thread.finish_signal.connect(
-                    lambda response: self.download_remote_repo(response))
+                    lambda file: self.download_remote_repo(file))
                 thread = threading.Thread(target=self.thread.request_listado_file)
                 thread.start()
             except Exception as e:
@@ -546,12 +548,11 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         current_last_modified = file.modification_date
         #
         file_size = file.size
-        print(file.size)
         #
-        if last_modified:
-            last_modified = datetime.fromisoformat(last_modified)
-        else:
-            last_modified = current_last_modified
+        #if last_modified:
+        #    last_modified = datetime.fromisoformat(last_modified)
+        #else:
+        #    last_modified = current_last_modified
         #
 
         def run_thread():
@@ -568,8 +569,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                     "Descargando el archivo", "La descarga no fue exitosa", error))
                 self.thread.finish_signal.connect(
                     lambda foo: self.success_listado_file_download(current_last_modified))
-                thread = threading.Thread(target=self.thread.download_file, args=(FileNode(
-                    filename=DIRS_FILE_NAME, modification_date=current_last_modified, size=0, href=LISTADO_HTML_FILE, type=TEXT),DATA_FOLDER,))
+                thread = threading.Thread(target=self.thread.download_file, args=(file,DATA_FOLDER))
                 thread.start()
             except Exception as e:
                 print(f"\tTarea fallida [{DIRS_FILE_NAME}]")
@@ -579,16 +579,16 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         # # convert last_modification_date in datetime
         # current_last_modified = datetime.strptime(current_last_modified, DATE_FROM_SERVER_FORMAT)
         # if file has been updated
-        if current_last_modified != last_modified:
-            q = QMessageBox.question(self, "Información del repositorio",
-                                     f"Los datos fueron actualizados el día {current_last_modified}\nTamaño del archivo: {nz(file_size)}\n¿Desea descargar los nuevos datos?",
-                                     QMessageBox.Yes | QMessageBox.No)
-            if q == QMessageBox.Yes:
-                run_thread()
-            else:
-                self.set_work_in_progress(False)
-        else:
+        #if current_last_modified != last_modified:
+        q = QMessageBox.question(self, "Información del repositorio",
+                                 f"Los datos fueron actualizados el día {current_last_modified}\nTamaño del archivo: {nz(file_size)}\n¿Desea descargar los nuevos datos?",
+                                 QMessageBox.Yes | QMessageBox.No)
+        if q == QMessageBox.Yes:
             run_thread()
+        else:
+            self.set_work_in_progress(False)
+        #else:
+        #    run_thread()
 
     def success_file_download(self):
         self.set_work_in_progress(False)
@@ -614,7 +614,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
     def open_in_explorer(self):
         i = self.tableWidget.currentRow()
         # get node
-        node: Node = self.tree.get_node(self.url_list[i])
+        node: Node = self._tree.get_node(self._url_list[i])
         #
         is_searching = self.search_button.isChecked()
         # is file is text or an image
@@ -623,18 +623,20 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             self.get_light_weight_file(type=node.tag.type, url=node.tag.href)
         else:
             # else, open it in explorer
-            webbrowser.open(self.tableWidget.item(i, 2).text() if is_searching else self.url_list[i], new=1,
+            webbrowser.open(self.tableWidget.item(i, 2).text() if is_searching else self._url_list[i], new=1,
                             autoraise=False)
 
     def show_in_tree(self, id):
         # get node
-        goal_node: Node = self.tree.get_node(id)
-        goal_depth = self.tree.depth(goal_node)
+        goal_node: Node = self._tree.get_node(id)
+        goal_depth = self._tree.depth(goal_node)
         depth = 0
         while depth != goal_depth:
-            parent: Node = self.tree.ancestor(id, depth)
-            #item_text = parent.tag.name if not parent.is_root() else "Visuales UCLV"
+            parent: Node = self._tree.ancestor(id, depth)
+            item_text = parent.tag.name if not parent.is_root() else "Visuales UCLV"
+            #items = self.treeWidget.findItems(parent.identifier, Qt.MatchFlag.MatchStartsWith, 1)
             print(parent.identifier)
+            #print(len(items))
             depth += 1
             # self.treeWidget.ex(parent.tag.name)
         # parent: Node = self.tree.parent(id)
@@ -676,7 +678,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             # copy url to clipboard
             copy_url_action = QAction("Copiar URL", menu)
             def copy_url():
-                text = self.tableWidget.item(idx, 2).text() if self.search_button.isChecked() else self.url_list[idx]
+                text = self.tableWidget.item(idx, 2).text() if self.search_button.isChecked() else self._url_list[idx]
                 clipboard = QApplication.clipboard()
                 clipboard.clear(mode=QClipboard.Clipboard)
                 clipboard.setText(text, QClipboard.Clipboard)
@@ -687,7 +689,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 show_location_action = QAction("Mostrar ubicación", menu)
 
                 def show_location():
-                    #self.locate(self.tableWidget.item(idx, 2).text())
+                    self.show_in_tree(self.tableWidget.item(idx, 2).text())
                     pass
                 show_location_action.triggered.connect(show_location)
                 menu.addAction(show_location_action)                #
@@ -701,9 +703,9 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             folder_path = selected_item.text(1) if isinstance(
                 selected_item, QTreeWidgetItem) else selected_item.text()
             # get node by column 1 text in QTreeWidgetItem
-            node: Node = self.tree.get_node(folder_path)
+            node: Node = self._tree.get_node(folder_path)
             #
-            if not has_children(self.tree, node):
+            if not has_children(self._tree, node):
                 try:
                     if not node.tag.is_empty:
                         self.set_work_in_progress(True)
@@ -732,29 +734,29 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         self.set_work_in_progress(False)
         #
         if children:
-            add_file_nodes_2_tree(tree=self.tree, parent=node, nodes=children)
+            add_file_nodes_2_tree(tree=self._tree, parent=node, nodes=children)
         else:
             tag = node.tag
             tag.is_empty = True
-            self.tree.update_node(node.identifier, tag=tag)
+            self._tree.update_node(node.identifier, tag=tag)
         # save tree
         self.state_label.setText("Guardando datos locales...")
-        save_all_dirs_n_files_tree(self.tree)
+        save_all_dirs_n_files_tree(self._tree)
         self.state_label.setText("Datos locales guardados")
         # fill table widget
-        node = self.tree.get_node(selected_item.text(1))
+        node = self._tree.get_node(selected_item.text(1))
         self.fill_files_table(node)
 
     def clear_table(self):
         # clear table
         while self.tableWidget.rowCount() > 0:
             self.tableWidget.removeRow(0)
-        self.url_list.clear()
+        self._url_list.clear()
 
     def fill_files_table(self, node: Node):
         self.clear_table()
         # get children
-        children = self.tree.children(node.identifier)
+        children = self._tree.children(node.identifier)
         #
         # get folder total size
         total_size = get_total_size(children)
@@ -787,11 +789,11 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                     node.modification_date.strftime(DATE_FORMAT)))
 
                 # add to urls to list
-                self.url_list.append(node.href)
+                self._url_list.append(node.href)
         self.tableWidget.resizeColumnsToContents()
 
     def fill_node(self, expanded_item: QTreeWidgetItem):
-        self.fill_tree(qparent=expanded_item, node=self.tree.get_node(
+        self.fill_tree(qparent=expanded_item, node=self._tree.get_node(
             expanded_item.text(1)))
 
     def error(self, place: str, text: str, exception: Exception = None):
@@ -829,7 +831,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             if qparent.child(0).text(1) == "None":
                 # remove invisible item
                 qparent.removeChild(qparent.child(0))
-                for child in self.tree.children(node.identifier):
+                for child in self._tree.children(node.identifier):
                     if not isinstance(child.tag, FileNode):
                         qchild = QTreeWidgetItem(
                             [str(child.tag), child.identifier])
