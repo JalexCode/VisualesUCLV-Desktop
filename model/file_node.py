@@ -5,13 +5,13 @@ from util.const import *
 
 class FileNode:
     def __init__(self, filename: str, modification_date: datetime = datetime.now(), size: float = 0,
-                 href: str = Paths.LISTADO_HTML_FILE, the_type: str = AppEnums.TEXT, favorite: bool = False,
+                 href: str = Paths.LISTADO_HTML_FILE, type: str = AppEnums.TEXT, favorite: bool = False,
                  downloaded: bool = False):
         self._filename: str = filename
         self._modification_date: datetime = modification_date
         self._size: float = size
         self._href: str = href
-        self._type: str = the_type
+        self._type: str = type
         self._favorite = favorite
         self._downloaded = downloaded
 
@@ -52,8 +52,8 @@ class FileNode:
         return self._type
 
     @type.setter
-    def type(self, the_type):
-        self._type = the_type
+    def type(self, type):
+        self._type = type
 
     @property
     def favorite(self):

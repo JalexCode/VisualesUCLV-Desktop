@@ -669,7 +669,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             self.preview_dock = PreviewDock(self)
             self.addDockWidget(
                 Qt.DockWidgetArea.RightDockWidgetArea, self.preview_dock)
-        self.preview_dock.load(the_type=type, data=data)
+        self.preview_dock.load(type=type, data=data)
 
     def show_main_table_context_menu(self, position):
         idx = self.tableWidget.currentRow()

@@ -44,8 +44,8 @@ class PreviewDock(QDockWidget):
         self.setWidget(self.main_widget)
 
     #
-    def load(self, the_type: str, data):
-        if the_type == AppEnums.TEXT:
+    def load(self, type: str, data):
+        if type == AppEnums.TEXT:
             self.image_viewer.setVisible(False)
             self.text_viewer.setVisible(True)
             #
