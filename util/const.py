@@ -4,7 +4,6 @@ This module contains constants variables
 
 import os
 
-
 class Paths:
     VISUALES_UCLV_URL = "http://visuales.uclv.cu"
     LISTADO_HTML_FILE = f"{VISUALES_UCLV_URL}/listado.html"
@@ -25,8 +24,9 @@ class AppInfo:
     version_minor = 4
     version_micro = 0
 
-    COLABORATORS = "Rolando Juan Rio Garaboa [@R0land013]"
+    COLABORATORS = "Rolando Juan Rio Garaboa [@R0land013]\nDavid Valdespino Pavón [@dvaldespino94]"
     ABOUT = f"""{NAME} funciona como explorador local del FTP {Paths.VISUALES_UCLV_URL}, el cual tiene mucha demanda por los internautas cubanos quienes acceden diariamente en busca de las series que siguen, las películas en estreno y, en general, el sin fin de materiales audiovisuales que en ese repositorio se encuentran. Este programa tiene como fin facilitar la exploración del contenido de este repositorio remoto.
+
 Características:
 * Acceso rápido y bajo demanda a todos los directorios del repositorio
 * Búsqueda de directorios y archivos

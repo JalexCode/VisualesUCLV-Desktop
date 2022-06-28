@@ -17,10 +17,10 @@ class SubTaskThread(QObject):
     def __init__(self):
         QObject.__init__(self)
 
-    def request_file(self):
+    def request_listado_file(self):
         request = Request()
         request.signals(self.info_signal, self.progress_signal, self.error_signal, self.finish_signal)
-        request.request_file()
+        request.request_listado_file()
 
     def download_file(self, file: FileNode, destiny=Paths.DOWNLOAD_DIR):
         request = Request()
@@ -86,8 +86,29 @@ class DownloadThread(QObject):
         """
         import time
         from pySmartDL import SmartDL
+        import urllib.parse
         #
         url = file.href
+        # set parent folder as destiny
+        try:
+            # extract parent folder from file
+            parent_folder = url
+            last_slash_index = parent_folder.rfind('/')
+            parent_folder = parent_folder[:last_slash_index]
+            parent_folder = urllib.parse.unquote(os.path.basename(urllib.parse.urlparse(parent_folder).path))
+            # try to create the folder
+            new_dest = os.path.join(dest, parent_folder)
+            try:
+                os.mkdir(new_dest)
+            except Exception as e:
+                print(e.args)
+        except Exception as e:
+            print(e.args)
+            parent_folder = ""
+        if os.path.exists(os.path.join(dest, parent_folder)):
+            dest = os.path.join(dest, parent_folder)
+            print(dest)
+        #
         try:
             #
             download = SmartDL(url, progress_bar=False, dest=dest, verify=False, timeout=AppSettings.TIMEOUT,

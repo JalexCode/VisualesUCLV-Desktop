@@ -43,7 +43,7 @@
        <bool>true</bool>
       </property>
       <property name="selectionMode">
-       <enum>QAbstractItemView::SingleSelection</enum>
+       <enum>QAbstractItemView::ExtendedSelection</enum>
       </property>
       <property name="showGrid">
        <bool>false</bool>
@@ -116,8 +116,9 @@
      <addaction name="menuRepositorio"/>
      <addaction name="menuEnlaces_2"/>
     </widget>
-    <addaction name="menuExportar_repositorio_local"/>
     <addaction name="show_download_manager_action"/>
+    <addaction name="separator"/>
+    <addaction name="menuExportar_repositorio_local"/>
     <addaction name="separator"/>
     <addaction name="quit_action"/>
    </widget>
@@ -198,6 +199,10 @@
    </property>
   </action>
   <action name="about_action">
+   <property name="icon">
+    <iconset resource="app.qrc">
+     <normaloff>:/icons/images/success.png</normaloff>:/icons/images/success.png</iconset>
+   </property>
    <property name="text">
     <string>Acerca de</string>
    </property>
@@ -208,6 +213,10 @@
    </property>
   </action>
   <action name="show_download_manager_action">
+   <property name="icon">
+    <iconset resource="app.qrc">
+     <normaloff>:/icons/images/download.png</normaloff>:/icons/images/download.png</iconset>
+   </property>
    <property name="text">
     <string>Gestionador de descargas</string>
    </property>

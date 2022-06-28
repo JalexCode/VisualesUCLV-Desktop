@@ -1,9 +1,10 @@
 from PyQt5.QtCore import QSettings
-
-from util.const import AppInfo
+from util.const import AppInfo, AppSettings
 from util.logger import send_to_log
 
-DEFAULT_SETTINGS = {"last_modification_date": ""}
+DEFAULT_SETTINGS = {"last_modification_date": "",
+                   "timeout":AppSettings.TIMEOUT}
+
 # QSettings object
 GENERAL_SETTINGS = QSettings(AppInfo.ID, "Explorer")
 

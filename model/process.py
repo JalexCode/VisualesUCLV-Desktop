@@ -50,11 +50,9 @@ class Request:
                             size = get_bytes(size)
                             modificated_date = children[i + 3].get_text().strip()
                             modificated_date = datetime.fromisoformat(modificated_date)
-                            #
+                            # return 'listado.html' file info
                             self.info_signal.emit("Datos remotos obtenidos")
-                            self.finish_signal.emit(
-                                FileNode(filename=filename, modification_date=modificated_date, size=size, href="",
-                                         type=""))  # response.headers['Last-Modified']
+                            self.finish_signal.emit(FileNode(filename=DIRS_FILE_NAME, modification_date=modificated_date, size=size, href=LISTADO_HTML_FILE, type=TEXT)) #response.headers['Last-Modified']
                             return
                     self.error_signal.emit(Exception("No se obtuvieron los datos del listado"))
                 else:
@@ -69,7 +67,10 @@ class Request:
         #
         self.info_signal.emit(f"Descargando '{file_to_write.filename}'")
         # file size...in bytes
-        file_size = int(response.headers['content-length'])
+        file_size = file_to_write.size
+        print(file_size)
+        if not file_size:
+            file_size = int(response.headers['content-length'])
         # file data that has been downloaded [in bytes]
         downloaded = 0
         with open(file=download_path, mode=mode) as listado_file:
@@ -121,7 +122,7 @@ class Request:
         files = []
         try:
             with closing(requests.get(url, verify=False, timeout=AppSettings.TIMEOUT)) as response:
-                print(response.status_code)
+
                 response.raise_for_status()
                 if response.status_code == 200:
                     self.info_signal.emit("Leyendo datos...")
