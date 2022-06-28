@@ -1,41 +1,41 @@
-import traceback
+import sys
 import threading
+import traceback
+import webbrowser
 from datetime import datetime
 from io import StringIO
-
-import sys
 
 import certifi
 import urllib3
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QPixmap, QClipboard
-from PyQt5.QtWidgets import QAction, QLabel, QMenu, QProgressBar, QTableWidget, QToolButton, QLineEdit, QWidget, \
+from PyQt5.QtWidgets import QAction, QLabel, QMenu, QProgressBar, QToolButton, QLineEdit, QWidget, \
     QMainWindow, QHBoxLayout, QToolBar, \
-    QTreeWidgetItem, QTableWidgetItem, QMessageBox, QApplication, QFileDialog, QTreeWidget
+    QTreeWidgetItem, QTableWidgetItem, QMessageBox, QApplication, QFileDialog
 
 from model.threads import SubTaskThread
 from ui.about_dialog import AboutDialog
 from ui.downloader import DownloadManager
 from ui.favorites_group_dock import FavoritesGroup
+from ui.main import Ui_MainWindow
 from ui.preview_dock import PreviewDock
 from ui.text import *
-from util.logger import SENT_TO_LOG
-from util.settings import GENERAL_SETTINGS, SAVE_SETTINGS
-from util.util import *
 from util.const import *
-import webbrowser
-import ui.app_rc
-from ui.main import Ui_MainWindow
+from util.logger import send_to_log
+from util.settings import GENERAL_SETTINGS, save_settings
+from util.util import *
 
 urllib3.disable_warnings()
 
 LastStateRole = Qt.ItemDataRole.UserRole
+
 
 class VisualesUCLV(Ui_MainWindow, QMainWindow):
     work_in_progress = False
 
     def __init__(self):
         QMainWindow.__init__(self)
+
         self.setupUi(self)
         # init Tree
         self._tree: Tree = Tree()
@@ -54,7 +54,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         # table widget connections
         self.tableWidget.itemClicked.connect(
             self.show_file_details_on_state_bar)
-        #self.tableWidget.cellChanged.connect(self.set_node_as_downloaded)
+        # self.tableWidget.cellChanged.connect(self.set_node_as_downloaded)
         self.tableWidget.itemDoubleClicked.connect(self.open_in_explorer)
         self.tableWidget.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tableWidget.customContextMenuRequested.connect(
@@ -81,7 +81,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
 
     def add_some_elements_to_ui(self):
         #
-        self.setWindowTitle(APP_NAME)
+        self.setWindowTitle(AppInfo.NAME)
         # 
         self.favorites_group_window = None
         self.preview_dock = None
@@ -173,7 +173,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         self.favorite_button.setIcon(QIcon(":/icons/images/favorite.png"))
         self.favorite_button.clicked.connect(self.set_node_as_favorite)
         self.toolbar.addWidget(self.favorite_button)
-#
+        #
         # self.set_downloaded_button = QToolButton()
         # self.set_downloaded_button.setText("Marcar como Descargado")
         # self.set_downloaded_button.setToolTip(
@@ -181,7 +181,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         # self.set_downloaded_button.setIcon(QIcon(":/icons/images/success.png"))
         # self.set_downloaded_button.clicked.connect(self.set_node_as_downloaded)
         # self.toolbar.addWidget(self.set_downloaded_button)
-#
+        #
         self.download_file_button = QToolButton()
         self.download_file_button.setText("Descargar")
         self.download_file_button.setToolTip(
@@ -207,7 +207,8 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         self.gridLayout.addWidget(self.message_label)
 
     def export_as_txt(self):
-        file, _ = QFileDialog.getSaveFileName(self, "Exportar enlaces como archivo de texto", "", "Archivo de texto (*.txt)")
+        file, _ = QFileDialog.getSaveFileName(self, "Exportar enlaces como archivo de texto", "",
+                                              "Archivo de texto (*.txt)")
         if file:
             txt = "\n".join(self._url_list)
             with open(file, mode="w", encoding="UTF-8") as txt_file:
@@ -217,6 +218,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         '''
         Toggle boolean value in Favorite attribute
         '''
+
         def update_node(nid: str):
             node: Node = self._tree.get_node(nid)
             # update Favorite attribute in node
@@ -224,6 +226,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             tag.favorite = not tag.favorite
             self._tree.update_node(node.identifier, tag=tag)
             return tag
+
         if self.treeWidget.hasFocus():
             selected_item: QTreeWidgetItem = self.treeWidget.currentItem()
             if selected_item is not None:
@@ -239,9 +242,9 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 if tag.favorite:
                     self.tableWidget.item(current_row, 0).setIcon(QIcon(":/icons/images/favorite.png"))
                 else:
-                    self.tableWidget.item(current_row, 0).setIcon(QIcon(FILE_TYPES[tag.type]))
+                    self.tableWidget.item(current_row, 0).setIcon(QIcon(FileTypes[tag.type]))
 
-    def set_node_as_downloaded(self, row:int, column:int):
+    def set_node_as_downloaded(self, row: int, column: int):
         item: QTableWidgetItem = self.tableWidget.item(row, column)
         last_state = item.data(LastStateRole)
         current_state = item.checkState()
@@ -255,7 +258,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             self._tree.update_node(node.identifier, tag=tag)
             if tag.downloaded:
                 self.tableWidget.item(row, 0).setCheckState(Qt.CheckState.Checked)
-                #.setIcon(QIcon(":/icons/images/success.png"))
+                # .setIcon(QIcon(":/icons/images/success.png"))
             else:
                 self.tableWidget.item(row, 0).setCheckState(Qt.CheckState.Unchecked)
 
@@ -307,8 +310,8 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             self.tableWidget.insertRow(row)
             if isinstance(node.tag, FileNode):
                 icon_item = QTableWidgetItem()
-                pixmap = QPixmap(FILE_TYPES[node.tag.type])
-                pixmap = pixmap.scaled(ICON_SIZE, ICON_SIZE)
+                pixmap = QPixmap(FileTypes[node.tag.type])
+                pixmap = pixmap.scaled(AppSettings.ICON_SIZE, AppSettings.ICON_SIZE)
                 icon = QIcon(pixmap)
                 icon_item.setIcon(icon)
                 self.tableWidget.setItem(row, 0, icon_item)
@@ -319,13 +322,13 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 self.tableWidget.setItem(
                     row, 3, QTableWidgetItem(nz(node.tag.size)))
                 self.tableWidget.setItem(row, 4, QTableWidgetItem(
-                    node.tag.modification_date.strftime(DATE_FORMAT)))
+                    node.tag.modification_date.strftime(AppSettings.DATE_FORMAT)))
                 # add to urls to list
                 self._url_list.append(node.tag.href)
             else:
                 icon_item = QTableWidgetItem()
                 pixmap = QPixmap(":/icons/images/folder.png")
-                pixmap = pixmap.scaled(ICON_SIZE, ICON_SIZE)
+                pixmap = pixmap.scaled(AppSettings.ICON_SIZE, AppSettings.ICON_SIZE)
                 icon = QIcon(pixmap)
                 icon_item.setIcon(icon)
                 self.tableWidget.setItem(row, 0, icon_item)
@@ -349,20 +352,20 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
     def load_local_repo(self):
         # load serialized tree file
         try:
-            print(f"Cargando archivo {TREE_DATA_FILE_NAME}")
-            self._tree = load_all_dirs_n_files_tree()
+            print(f"Cargando archivo {Paths.TREE_DATA_FILE_NAME}")
+            self.tree = load_all_dirs_n_files_tree()
             print("Llenando árbol...")
             self.fill_tree(qparent=None, node=self._tree.get_node(self._tree.root))
             return True
         except TreeFileDoesntExistException as e:
-            print(f"\tTarea fallida [{TREE_DATA_FILE_NAME}]")
+            print(f"\tTarea fallida [{Paths.TREE_DATA_FILE_NAME}]")
             print("\t" + str(e.args[0]))
             #
             self.read_html_file()
 
     def read_html_file(self):
         if not self.work_in_progress:
-            print(f"Leyendo archivo {DIRS_FILE_NAME}")
+            print(f"Leyendo archivo {Paths.DIRS_FILE_NAME}")
             try:
                 # change state
                 self.set_work_in_progress(True)
@@ -379,7 +382,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 thread = threading.Thread(target=self.thread.read_html_file)
                 thread.start()
             except Exception as e:
-                print(f"\tTarea fallida [{DIRS_FILE_NAME}]")
+                print(f"\tTarea fallida [{Paths.DIRS_FILE_NAME}]")
                 print("\t" + str(e.args))
                 if isinstance(e, DirsFileDoesntExistException):
                     self.state_label.setText(str(e.args))
@@ -387,7 +390,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 self.message_label.setText(
                     "No hay datos guardados localmente.\nSi está conectado a Internet, presione el botón 'Descargar repositorio remoto' para obtener el fichero de directorios del FTP e iniciar la exploración")
                 self.error(
-                    f"Leyendo el archivo '{DIRS_FILE_NAME}'", "Error de funcionamiento", e)
+                    f"Leyendo el archivo '{Paths.DIRS_FILE_NAME}'", "Error de funcionamiento", e)
         else:
             self.notificate_work_in_progress()
 
@@ -411,7 +414,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             self.state_label.setText(error.args[0])
         else:
             message = FAIL_LOADING_DIR_FILE
-            self.error(f"Leyendo el archivo '{DIRS_FILE_NAME}'",
+            self.error(f"Leyendo el archivo '{Paths.DIRS_FILE_NAME}'",
                        "No se pudo cargar los datos del archivo", error)
         self.set_work_in_progress(False)
         self.show_hide_message(True, message)
@@ -449,10 +452,10 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             try:
                 href = self._url_list[i]
                 #
-                node:Node = self._tree.get_node(href)
+                node: Node = self.tree.get_node(href)
                 if node is None:
                     raise FileNotFounded(f"No se encontró '{href}'")
-                file:FileNode = node.tag
+                file: FileNode = node.tag
                 #
                 print(f"Descargando archivo {file.filename}")
                 #
@@ -462,7 +465,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                     lambda text: self.state_label.setText(text))
                 self.thread.progress_signal.connect(
                     lambda progress, speed, left_time: self.set_progress(progress, speed, left_time,
-                                                                        text="Descargando"))
+                                                                         text="Descargando"))
                 self.thread.error_signal.connect(lambda error: self.error(
                     "Descargando el archivo", "La descarga no fue exitosa", error))
                 self.thread.finish_signal.connect(
@@ -473,7 +476,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             except Exception as e:
                 print(f"\tDescarga fallida [{file}]")
                 print("\t" + str(e.args))
-                self.state_label.setText(CONNECTION_FAIL)
+                self.state_label.setText(ExceptionMessages.CONNECTION_FAIL)
 
     def add_to_download_queue(self):
         '''
@@ -513,11 +516,11 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 except Exception as e:
                     print(f"\tDescarga fallida [{file}]")
                     print("\t" + str(e.args))
-                    self.state_label.setText(CONNECTION_FAIL)
+                    self.state_label.setText(ExceptionMessages.CONNECTION_FAIL)
 
     def request_remote_repo_file(self):
         if not self.work_in_progress:
-            print(f"Solicitando archivo {LISTADO_HTML_FILE}")
+            print(f"Solicitando archivo {Paths.LISTADO_HTML_FILE}")
             try:
                 self.set_work_in_progress(True)
                 self.thread = SubTaskThread()
@@ -530,9 +533,9 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 thread = threading.Thread(target=self.thread.request_listado_file)
                 thread.start()
             except Exception as e:
-                print(f"\tTarea fallida [{DIRS_FILE_NAME}]")
+                print(f"\tTarea fallida [{Paths.DIRS_FILE_NAME}]")
                 print("\t" + str(e.args))
-                self.state_label.setText(CONNECTION_FAIL)
+                self.state_label.setText(ExceptionMessages.CONNECTION_FAIL)
         else:
             self.notificate_work_in_progress()
 
@@ -556,7 +559,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         #
 
         def run_thread():
-            print(f"Descargando archivo {LISTADO_HTML_FILE}")
+            print(f"Descargando archivo {Paths.LISTADO_HTML_FILE}")
             try:
                 self.set_work_in_progress(True)
                 self.thread = SubTaskThread()
@@ -572,9 +575,9 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 thread = threading.Thread(target=self.thread.download_file, args=(file,DATA_FOLDER))
                 thread.start()
             except Exception as e:
-                print(f"\tTarea fallida [{DIRS_FILE_NAME}]")
+                print(f"\tTarea fallida [{Paths.DIRS_FILE_NAME}]")
                 print("\t" + str(e.args))
-                self.state_label.setText(CONNECTION_FAIL)
+                self.state_label.setText(ExceptionMessages.CONNECTION_FAIL)
 
         # # convert last_modification_date in datetime
         # current_last_modified = datetime.strptime(current_last_modified, DATE_FROM_SERVER_FORMAT)
@@ -596,7 +599,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
     def success_listado_file_download(self, last_modification_date):
         self.set_work_in_progress(False)
         # save last modification date setting
-        SAVE_SETTINGS("last_modification_date", str(last_modification_date))
+        save_settings("last_modification_date", str(last_modification_date))
         #
         self.read_html_file()
         self.check_tree_is_empty()
@@ -618,7 +621,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
         #
         is_searching = self.search_button.isChecked()
         # is file is text or an image
-        if node.tag.type == IMAGE or node.tag.type == TEXT:
+        if node.tag.type == AppEnums.IMAGE or node.tag.type == AppEnums.TEXT:
             # download it
             self.get_light_weight_file(type=node.tag.type, url=node.tag.href)
         else:
@@ -677,11 +680,13 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
             menu = QMenu()
             # copy url to clipboard
             copy_url_action = QAction("Copiar URL", menu)
+
             def copy_url():
                 text = self.tableWidget.item(idx, 2).text() if self.search_button.isChecked() else self._url_list[idx]
                 clipboard = QApplication.clipboard()
                 clipboard.clear(mode=QClipboard.Clipboard)
                 clipboard.setText(text, QClipboard.Clipboard)
+
             copy_url_action.triggered.connect(copy_url)
             menu.addAction(copy_url_action)
             # search table
@@ -691,8 +696,9 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 def show_location():
                     self.show_in_tree(self.tableWidget.item(idx, 2).text())
                     pass
+
                 show_location_action.triggered.connect(show_location)
-                menu.addAction(show_location_action)                #
+                menu.addAction(show_location_action)  #
             try:
                 menu.exec(self.tableWidget.viewport().mapToGlobal(position))
             except Exception as e:
@@ -723,7 +729,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                         thread.start()
                 except Exception as e:
                     print(e.args)
-                    self.state_label.setText(CONNECTION_FAIL)
+                    self.state_label.setText(ExceptionMessages.CONNECTION_FAIL)
             else:
                 self.fill_files_table(node)
         else:
@@ -777,8 +783,8 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 if node.favorite:
                     pixmap = QPixmap(":/icons/images/favorite.png")
                 else:
-                    pixmap = QPixmap(FILE_TYPES[node.type])
-                pixmap = pixmap.scaled(ICON_SIZE, ICON_SIZE)
+                    pixmap = QPixmap(FileTypes[node.type])
+                pixmap = pixmap.scaled(AppSettings.ICON_SIZE, AppSettings.ICON_SIZE)
                 icon = QIcon(pixmap)
                 icon_item.setIcon(icon)
                 self.tableWidget.setItem(row, 0, icon_item)
@@ -786,7 +792,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
                 self.tableWidget.setItem(
                     row, 2, QTableWidgetItem(nz(node.size)))
                 self.tableWidget.setItem(row, 3, QTableWidgetItem(
-                    node.modification_date.strftime(DATE_FORMAT)))
+                    node.modification_date.strftime(AppSettings.DATE_FORMAT)))
 
                 # add to urls to list
                 self._url_list.append(node.href)
@@ -798,7 +804,7 @@ class VisualesUCLV(Ui_MainWindow, QMainWindow):
 
     def error(self, place: str, text: str, exception: Exception = None):
         self.set_work_in_progress(False)
-        self.state_label.setText(AN_ERROR_WAS_OCURRED)
+        self.state_label.setText(ExceptionMessages.AN_ERROR_WAS_OCURRED)
         #
         msg = QMessageBox(self)
         msg.setIcon(msg.Icon.Critical)
@@ -891,7 +897,8 @@ def excepthook(exc_type, exc_value, tracebackobj):
 
     print(msg)
 
-    SENT_TO_LOG(msg, "ERROR")
+    send_to_log(msg, "ERROR")
+
 
 sys.excepthook = excepthook
 
@@ -901,6 +908,7 @@ if __name__ == "__main__":
     os.environ["SSL_CERT_FILE"] = certifi.where()
     # app dark style
     import qdarkstyle
+
     app.setStyleSheet(qdarkstyle.load_stylesheet())
     # start
     visuales = VisualesUCLV()

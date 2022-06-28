@@ -1,19 +1,16 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtWidgets import QDialog, QTableWidget, QTableWidgetItem, QVBoxLayout, QAbstractItemView, QFrame, \
+from PyQt5.QtWidgets import QVBoxLayout, QFrame, \
     QDockWidget, QWidget, QPlainTextEdit, QLabel
-from treelib import Node
 
-from ui.util.pixmap_label import PixmapLabel
-from util.const import *
-from util.util import filter_favorites
-import ui.app_rc
+from util.const import AppEnums, AppSettings
 
 
 class PreviewDock(QDockWidget):
-    '''
+    """
     A Dock widget that contains an image viewer and a text reader
-    '''
+    """
+
     def __init__(self, parent=None):
         QDockWidget.__init__(self)
         self._parent = parent
@@ -29,9 +26,9 @@ class PreviewDock(QDockWidget):
         self.text_viewer.setReadOnly(True)
         self.text_viewer.setVisible(False)
         # label
-        self.image_viewer = QLabel()  #PixmapLabel()
+        self.image_viewer = QLabel()  # PixmapLabel()
         self.image_viewer.setText("")
-        #self.image_viewer.setScaledContents(True)
+        # self.image_viewer.setScaledContents(True)
         self.image_viewer.setVisible(False)
         self.image_viewer.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
         # widget container
@@ -48,7 +45,7 @@ class PreviewDock(QDockWidget):
 
     #
     def load(self, type: str, data):
-        if type == TEXT:
+        if type == AppEnums.TEXT:
             self.image_viewer.setVisible(False)
             self.text_viewer.setVisible(True)
             #
@@ -59,7 +56,7 @@ class PreviewDock(QDockWidget):
             #
             pixmap = QPixmap()
             pixmap.loadFromData(data)
-            pixmap = pixmap.scaled(PREVIEW_SIZE, PREVIEW_SIZE, Qt.KeepAspectRatioByExpanding,
+            pixmap = pixmap.scaled(AppSettings.PREVIEW_SIZE, AppSettings.PREVIEW_SIZE, Qt.KeepAspectRatioByExpanding,
                                    Qt.SmoothTransformation)
             #
             self.image_viewer.setPixmap(pixmap)

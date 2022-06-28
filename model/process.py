@@ -1,18 +1,24 @@
-from datetime import datetime
-from bs4 import BeautifulSoup
-import requests
+import time
 from contextlib import closing
+from datetime import datetime
+
+import requests
+from bs4 import BeautifulSoup
 
 from util.tree_loader import load_visuales_tree
 from util.util import *
-import time
+
 
 class Request:
-    '''
+    """
     This class contains methods that must be called by a QObject to work in async mode
-    '''
+    """
+
     def __init__(self):
-        pass
+        self.finish_signal = None
+        self.error_signal = None
+        self.progress_signal = None
+        self.info_signal = None
 
     def signals(self, info_signal, progress_signal, error, finish):
         self.info_signal = info_signal
@@ -20,15 +26,14 @@ class Request:
         self.error_signal = error
         self.finish_signal = finish
 
-    def request_listado_file(self):
-        '''
+    def request_file(self):
+        """
         Gets listado.html file 'size' and 'last modification date' attributes
         :return:
-        '''
+        """
         try:
             self.info_signal.emit("Solicitando datos remotos...")
-            # request index page to get listado.html size and last modification date
-            with closing(requests.get(VISUALES_UCLV_URL, verify=False, timeout=TIMEOUT)) as response:
+            with closing(requests.get(Paths.VISUALES_UCLV_URL, verify=False, timeout=AppSettings.TIMEOUT)) as response:
                 if response.status_code == 200:
                     # parse data
                     bs = BeautifulSoup(response.text, features="lxml")
@@ -38,6 +43,7 @@ class Request:
                             filename = children[i + 2].get_text().strip()
                         except:
                             filename = ""
+
                         if filename == "listado.html":
                             # get files metadata
                             size = children[i + 4].get_text().strip()
@@ -54,7 +60,8 @@ class Request:
         except Exception as error:
             self.error_signal.emit(error)
 
-    def write_content_on_file(self, response:requests.Response, file_to_write:FileNode, mode:str="wb", destiny:str=DOWNLOAD_DIR):
+    def write_content_on_file(self, response: requests.Response, file_to_write: FileNode, mode: str = "wb",
+                              destiny: str = Paths.DOWNLOAD_DIR):
         # destiny file
         download_path = os.path.join(destiny, file_to_write.filename)
         #
@@ -68,7 +75,7 @@ class Request:
         downloaded = 0
         with open(file=download_path, mode=mode) as listado_file:
             t0 = time.time()
-            for data in response.iter_content(chunk_size=CHUNK_SIZE):
+            for data in response.iter_content(chunk_size=AppSettings.CHUNK_SIZE):
                 # write data on fie
                 listado_file.write(data)
                 # update state data
@@ -87,34 +94,35 @@ class Request:
         # finish
         self.info_signal.emit(f"Archivo guardado en: '{download_path}'")
         self.finish_signal.emit(True)
-        
-    def download_file(self, file:FileNode, destiny:str=DOWNLOAD_DIR):
-        '''
+
+    def download_file(self, file: FileNode, destiny: str = Paths.DOWNLOAD_DIR):
+        """
         Download a file in stream mode
         :return:
-        '''
+        """
         try:
             self.info_signal.emit("Solicitando datos remotos...")
-            with closing(requests.get(file.href, verify=False, timeout=TIMEOUT, stream=True)) as response:
+            with closing(requests.get(file.href, verify=False, timeout=AppSettings.TIMEOUT, stream=True)) as response:
                 if response.status_code == 200:
                     #
-                    self.write_content_on_file(response=response, file_to_write=file, destiny=destiny)                    
+                    self.write_content_on_file(response=response, file_to_write=file, destiny=destiny)
                 else:
                     raise BadResponseException(response.status_code)
         except Exception as error:
-           self.error_signal.emit(error)
+            self.error_signal.emit(error)
 
     def get_page(self, url: str, parent: str = ""):
-        '''
+        """
         Get all files metadata in the given page
         :param url:
         :param parent:
         :return:
-        '''
+        """
         self.info_signal.emit("Solicitando datos remotos...")
         files = []
         try:
-            with closing(requests.get(url, verify=False, timeout=TIMEOUT)) as response:
+            with closing(requests.get(url, verify=False, timeout=AppSettings.TIMEOUT)) as response:
+
                 response.raise_for_status()
                 if response.status_code == 200:
                     self.info_signal.emit("Leyendo datos...")
@@ -127,13 +135,14 @@ class Request:
                         if size != "-":
                             # get files metadata
                             size = get_bytes(size)
-                            type = get_type(children[i].find("img").attrs['src'])
+                            the_type = get_type(children[i].find("img").attrs['src'])
                             filename = children[i + 1].get_text().strip()
-                            modificated_date = children[i + 2].get_text().strip()
-                            modificated_date = datetime.fromisoformat(modificated_date)
+                            modificated_date = datetime.fromisoformat(
+                                children[i + 2].get_text().strip()
+                            )
                             href = parent + children[i + 1].find("a").attrs['href']
                             # add to list
-                            files.append(FileNode(filename, modificated_date, size, href, type))
+                            files.append(FileNode(filename, modificated_date, size, href, the_type))
                             # emit progress signal
                             self.progress_signal.emit(i * 100 // len(children) * 5, None, None)
                 else:
@@ -143,28 +152,28 @@ class Request:
             self.error_signal.emit(error)
 
     def read_html_file(self):
-        '''
+        """
         Parse the html content in '.visuales' file
         :return:
-        '''
-        self.info_signal.emit(f"Leyendo archivo {DIRS_FILE_NAME}")
+        """
+        self.info_signal.emit(f"Leyendo archivo {Paths.DIRS_FILE_NAME}")
         try:
             html_str = get_html_file_content()
-            self.info_signal.emit(f"Parseando archivo {DIRS_FILE_NAME}")
+            self.info_signal.emit(f"Parseando archivo {Paths.DIRS_FILE_NAME}")
             tree = load_visuales_tree(html_str, self.progress_signal)
             self.finish_signal.emit(tree)
         except Exception as error:
             if isinstance(error, DirsFileDoesntExistException):
-                print(f"\tTarea fallida [{DIRS_FILE_NAME}]")
+                print(f"\tTarea fallida [{Paths.DIRS_FILE_NAME}]")
             print("\t" + str(error.args[0]))
             self.error_signal.emit(error)
 
-    def get_light_weight_file(self, url:str):
-        '''
+    def get_light_weight_file(self, url: str):
+        """
         Get a text or image file content
         :param url:
         :return:
-        '''
+        """
         self.info_signal.emit("Solicitando archivo remoto...")
         try:
             with closing(requests.get(url, verify=False)) as response:
@@ -179,6 +188,6 @@ class Request:
                     raise BadResponseException(response.status_code)
         except Exception as error:
             if isinstance(error, DirsFileDoesntExistException):
-                print(f"\tTarea fallida [{DIRS_FILE_NAME}]")
+                print(f"\tTarea fallida [{Paths.DIRS_FILE_NAME}]")
             print("\t" + str(error.args[0]))
             self.error_signal.emit(error)

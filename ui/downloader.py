@@ -1,6 +1,5 @@
 import subprocess
 import threading
-from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
 from typing import List
 
@@ -14,15 +13,16 @@ from pySmartDL import SmartDL
 
 from model.threads import DownloadThread
 from ui.downloader_ui import Ui_MainWindow
-from util.downloader_settings import DOWNLOADER_SETTINGS, SAVE_SETTINGS
+from util.downloader_settings import DOWNLOADER_SETTINGS, save_settings
 from util.flags import *
 from util.util import *
 import urllib.parse
 
+
 class DownloadManager(Ui_MainWindow, QMainWindow):
-    '''
+    """
     A download manager
-    '''
+    """
 
     def __init__(self, parent=None):
         QMainWindow.__init__(self)
@@ -51,7 +51,7 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
         return self.__state
 
     @state.setter
-    def state(self, value:str):
+    def state(self, value: str):
         self.__state = value
 
     def show_and_load(self):
@@ -75,7 +75,7 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
         self.tableWidget.setHorizontalHeaderLabels(
             ["", "Nombre", "Estado", "Progreso", "Velocidad", "Tamaño", "Tiempo restante", "Agregada"])
         #
-        self.setWindowTitle(APP_NAME + " Download Manager")
+        self.setWindowTitle(AppInfo.NAME + " Download Manager")
         self.toolBar.setWindowTitle("Barra de herramientas")
         # state label
         self.state_label = QLabel("")
@@ -114,8 +114,10 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
             "Pausa todas las tareas")
         self.pause_button.setIcon(
             QIcon(":/icons/images/pause.png"))
+
         def set_pause():
             self.__state = PAUSE
+
         self.pause_button.clicked.connect(lambda: set_pause())
         self.toolBar.addWidget(self.pause_button)
         #
@@ -174,7 +176,8 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
         self.open_destiny_button.setToolTip(
             "Abre la carpeta destino")
         self.open_destiny_button.setIcon(QIcon(":/icons/images/folder.png"))
-        self.open_destiny_button.clicked.connect(lambda: self.open_destiny(DOWNLOADER_SETTINGS.value("destiny_folder", type=str), True, False))
+        self.open_destiny_button.clicked.connect(
+            lambda: self.open_destiny(DOWNLOADER_SETTINGS.value("destiny_folder", type=str), True, False))
         self.toolBar.addWidget(self.open_destiny_button)
         #
 
@@ -246,15 +249,16 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
         self.change_song_button.clicked.connect(self.change_alert_sound)
         # settings
         self.max_threads_threads.valueChanged.connect(
-            lambda value: SAVE_SETTINGS("max_threads", value))
+            lambda value: save_settings("max_threads", value))
         #
-        self.attemps_limit_spin.valueChanged.connect(lambda value: SAVE_SETTINGS("attemps_limit", value))
+        self.attemps_limit_spin.valueChanged.connect(lambda value: save_settings("attemps_limit", value))
         #
         self.if_file_already_exists_combo.currentIndexChanged.connect(
-            lambda index: SAVE_SETTINGS("if_file_exists", index))
+            lambda index: save_settings("if_file_exists", index))
         #
         self.when_downloads_stops_combo.currentIndexChanged.connect(
-            lambda index: SAVE_SETTINGS("on_stop", index))
+            lambda index: save_settings("on_stop", index))
+
         #
         def open_file():
             i = self.history_table.currentRow()
@@ -292,7 +296,7 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
             row = self.tableWidget.rowCount()
             self.tableWidget.insertRow(row)
             # set file type image
-            self.set_table_widget_item_pixmap(row, file.type if file.type else UNKNOWN)
+            self.set_table_widget_item_pixmap(row, file.type if file.type else AppEnums.UNKNOWN)
             #
             self.tableWidget.setItem(row, 1, QTableWidgetItem(file.filename))
             self.tableWidget.setItem(row, 2, QTableWidgetItem("-"))
@@ -303,7 +307,7 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
             self.tableWidget.setItem(row, 4, QTableWidgetItem("-"))
             self.on_file_size_deteted(row, file.size)
             self.tableWidget.setItem(row, 6, QTableWidgetItem("-"))
-            self.tableWidget.setItem(row, 7, QTableWidgetItem(datetime.now().strftime(DATE_FORMAT)))
+            self.tableWidget.setItem(row, 7, QTableWidgetItem(datetime.now().strftime(AppSettings.DATE_FORMAT)))
         #
         self.tableWidget.resizeColumnsToContents()
         pass
@@ -312,7 +316,7 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
         row = self.tableWidget.rowCount()
         self.tableWidget.insertRow(row)
         #
-        self.set_table_widget_item_pixmap(row, file.type if file.type else UNKNOWN)
+        self.set_table_widget_item_pixmap(row, file.type if file.type else AppEnums.UNKNOWN)
         self.tableWidget.setItem(row, 1, QTableWidgetItem(file.filename))
         self.tableWidget.setItem(row, 2, QTableWidgetItem("-"))
         # progress
@@ -322,7 +326,7 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
         self.tableWidget.setItem(row, 4, QTableWidgetItem("-"))
         self.tableWidget.setItem(row, 5, QTableWidgetItem(nz(file.size)))
         self.tableWidget.setItem(row, 6, QTableWidgetItem("-"))
-        self.tableWidget.setItem(row, 7, QTableWidgetItem(datetime.now().strftime(DATE_FORMAT)))
+        self.tableWidget.setItem(row, 7, QTableWidgetItem(datetime.now().strftime(AppSettings.DATE_FORMAT)))
         #
         self.tableWidget.resizeColumnsToContents()
 
@@ -352,7 +356,8 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
             #         #
             #         executor.submit(fn=thread.download_async, args=(i,self._files[i], DOWNLOAD_DIR,))
             #         print("ASD")
-            thread = threading.Thread(target=thread.download, args=(self._files, DOWNLOADER_SETTINGS.value("destiny_folder", type=str),))
+            thread = threading.Thread(target=thread.download,
+                                      args=(self._files, DOWNLOADER_SETTINGS.value("destiny_folder", type=str),))
             thread.start()
             #
             self.timer.start(1000)
@@ -368,10 +373,10 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
         # check free space on disk
         self.get_free_space()
 
-    def on_error(self, file:FileNode, error: Exception):
+    def on_error(self, file: FileNode, error: Exception):
         row = self.errors_table.rowCount()
         self.errors_table.insertRow(row)
-        self.errors_table.setItem(row, 0, QTableWidgetItem(datetime.now().strftime(DATE_FORMAT)))
+        self.errors_table.setItem(row, 0, QTableWidgetItem(datetime.now().strftime(AppSettings.DATE_FORMAT)))
         self.errors_table.setItem(row, 1, QTableWidgetItem(file.filename))
         self.errors_table.setItem(row, 2, QTableWidgetItem(f"[{error.__class__.__name__}] {str(error.args)}"))
         #
@@ -381,7 +386,7 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
         row = self.tableWidget.rowCount()
         self.tableWidget.insertRow(row)
         # set file type image
-        self.set_table_widget_item_pixmap(row, file.type if file.type else UNKNOWN)
+        self.set_table_widget_item_pixmap(row, file.type if file.type else AppEnums.UNKNOWN)
         #
         self.tableWidget.setItem(row, 1, QTableWidgetItem(file.filename))
         self.tableWidget.setItem(row, 2, QTableWidgetItem("-"))
@@ -392,17 +397,15 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
         self.tableWidget.setItem(row, 4, QTableWidgetItem("-"))
         self.on_file_size_deteted(row, file.size)
         self.tableWidget.setItem(row, 6, QTableWidgetItem("-"))
-        self.tableWidget.setItem(row, 7, QTableWidgetItem(datetime.now().strftime(DATE_FORMAT)))
+        self.tableWidget.setItem(row, 7, QTableWidgetItem(datetime.now().strftime(AppSettings.DATE_FORMAT)))
 
-
-
-    def on_finish_one(self, idx:int, state:str, file: FileNode, download_data: SmartDL):
-        '''
+    def on_finish_one(self, idx: int, state: str, file: FileNode, download_data: SmartDL):
+        """
         Receives data from finish_one_task_signal
         :param filename:
         :param download_data:
         :return:
-        '''
+        """
         #
         self.timer.stop()
         self.time = QTime(0, 0, 0)
@@ -422,10 +425,10 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
         #
 
     def on_finish_all(self):
-        '''
+        """
         Receives data from finish_all_signal
         :return:
-        '''
+        """
         #
         self.timer.stop()
         self.time = QTime(0, 0, 0)
@@ -453,18 +456,18 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
         :return:
         """
         try:
-            if type in AUDIO_TYPE:
-                self._files[row].type = AUDIO
-            elif type in TEXT_TYPE:
-                self._files[row].type = TEXT
-            elif type in IMAGE_TYPE:
-                self._files[row].type = IMAGE
-            elif type in VND_TYPE:
-                self._files[row].type = LAYOUT
-            elif type in APPLICATION_TYPE:
-                self._files[row].type = EXEC
+            if type in FileExtensions["AUDIO"]:
+                self._files[row].type = FileTypes.AUDIO
+            elif type in FileExtensions["TEXT"]:
+                self._files[row].type = FileTypes.TEXT
+            elif type in FileExtensions["IMAGE"]:
+                self._files[row].type = FileTypes.IMAGE
+            elif type in FileExtensions["VND"]:
+                self._files[row].type = FileTypes.LAYOUT
+            elif type in FileExtensions["APPLICATION"]:
+                self._files[row].type = FileTypes.EXEC
             else:
-                self._files[row].type = UNKNOWN
+                self._files[row].type = AppEnums.UNKNOWN
             #
             self.set_table_widget_item_pixmap(row, self._files[row].type)
         except Exception as e:
@@ -479,9 +482,9 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
         """
         icon_item = QTableWidgetItem()
         # create pixmap
-        pixmap = QPixmap(FILE_TYPES[type])
+        pixmap = QPixmap(FileTypes[type])
         # scale pixmap
-        pixmap = pixmap.scaled(ICON_SIZE, ICON_SIZE)
+        pixmap = pixmap.scaled(AppSettings.ICON_SIZE, AppSettings.ICON_SIZE)
         # set icon
         icon = QIcon(pixmap)
         icon_item.setIcon(icon)
@@ -495,7 +498,7 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
         """
         # open file dialog
         location, _ = QFileDialog.getOpenFileName(self, "Seleccione archivos de texto",
-                                                  USER_PATH, "TXT (*.txt)")
+                                                  Paths.USER_PATH, "TXT (*.txt)")
         if location:
             with open(location, "r", encoding="UTF-8") as txt:
                 content = txt.readlines()
@@ -515,13 +518,13 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
         path = QFileDialog.getExistingDirectory(self, "Seleccione una carpeta para almacenar las Descargas")
         if path:
             self.destiny_folder_input.setText(path)
-            SAVE_SETTINGS("destiny_folder", path)
+            save_settings("destiny_folder", path)
 
     def change_alert_sound(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Seleccionar un audio", USER_PATH, "Audio (*.mp3; *.wav; *.ogg)")
+        path, _ = QFileDialog.getOpenFileName(self, "Seleccionar un audio", Paths.USER_PATH, "Audio (*.mp3; *.wav; *.ogg)")
         if path:
             self.sound_path_input.setText(path)
-            SAVE_SETTINGS("alert_sound", path)
+            save_settings("alert_sound", path)
 
     def alert(self):
         alert_on_finish = DOWNLOADER_SETTINGS.value("alert_on_finish", type=bool)
@@ -565,7 +568,7 @@ class DownloadManager(Ui_MainWindow, QMainWindow):
                                      creationflags=CREATE_NO_WINDOW)
         except Exception as e:
             print(e.args)
-            #self.error("Abriendo archivo descargado", e.args)
+            # self.error("Abriendo archivo descargado", e.args)
 
     def error(self, place: str, text: str, exception: Exception = None):
         #

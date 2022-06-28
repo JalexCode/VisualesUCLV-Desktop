@@ -143,11 +143,11 @@ class Ui_MainWindow(object):
         self.show_download_manager_action.setText(_translate("MainWindow", "Gestionador de descargas"))
         self.actionArchivos_del_directorio.setText(_translate("MainWindow", "Archivos del directorio"))
         self.actionArchivos_del_directorio_2.setText(_translate("MainWindow", "Archivos del directorio"))
-import ui.app_rc
 
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()

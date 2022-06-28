@@ -4,12 +4,14 @@ from util.const import *
 
 
 class FileNode:
-    def __init__(self, filename:str, modification_date:datetime=datetime.now(), size:float=0, href:str=LISTADO_HTML_FILE, type:str=TEXT, favorite:bool=False, downloaded:bool=False):
-        self._filename:str = filename
-        self._modification_date:datetime = modification_date
-        self._size:float = size
-        self._href:str = href
-        self._type:str = type
+    def __init__(self, filename: str, modification_date: datetime = datetime.now(), size: float = 0,
+                 href: str = Paths.LISTADO_HTML_FILE, type: str = AppEnums.TEXT, favorite: bool = False,
+                 downloaded: bool = False):
+        self._filename: str = filename
+        self._modification_date: datetime = modification_date
+        self._size: float = size
+        self._href: str = href
+        self._type: str = type
         self._favorite = favorite
         self._downloaded = downloaded
 
@@ -36,7 +38,7 @@ class FileNode:
     @size.setter
     def size(self, size):
         self._size = size
-        
+
     @property
     def href(self):
         return self._href
@@ -44,7 +46,7 @@ class FileNode:
     @href.setter
     def href(self, href):
         self._href = href
-        
+
     @property
     def type(self):
         return self._type
@@ -60,7 +62,7 @@ class FileNode:
     @favorite.setter
     def favorite(self, value):
         self._favorite = value
-        
+
     @property
     def downloaded(self):
         return self._downloaded
@@ -68,7 +70,7 @@ class FileNode:
     @downloaded.setter
     def downloaded(self, value):
         self._downloaded = value
-        
+
     def __str__(self) -> str:
         return self.filename
 
