@@ -205,7 +205,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def create_tree_item(self, node: FolderNode):
         item = QTreeWidgetItem([node.name])
         item.setData(0, Qt.UserRole, node.url)
-        if not self.tree_repo.tree.is_leaf(node.url):
+        tree_node = self.tree_repo.tree.get_node(node.url)
+        if tree_node and not tree_node.is_leaf():
             item.addChild(QTreeWidgetItem(["Loading..."]))
         return item
 
