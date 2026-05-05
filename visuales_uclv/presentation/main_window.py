@@ -1,21 +1,25 @@
 import sys
 import asyncio
+import traceback
 from typing import List, Dict
-from PySide6.QtWidgets import QMainWindow, QApplication, QTreeWidgetItem, QTableWidgetItem, QLineEdit, QToolButton, QToolBar, QMenu, QProgressBar, QMessageBox, QFileDialog
-from PySide6.QtCore import Qt, QThread, Signal, Slot, QRect, QPropertyAnimation, QEasingCurve, QTimer, QSize
-from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import (QMainWindow, QApplication, QTreeWidgetItem, QTableWidgetItem,
+                             QLineEdit, QToolButton, QToolBar, QMenu, QProgressBar,
+                             QMessageBox, QFileDialog, QDialog, QVBoxLayout, QTextEdit, QLabel)
+from PySide6.QtCore import Qt, QThread, Signal, Slot, QSize
+from PySide6.QtGui import QIcon, QPixmap
 from qt_material import apply_stylesheet
 
 from visuales_uclv.presentation.ui.main_ui import Ui_MainWindow
 from visuales_uclv.presentation.ui.downloader_ui import Ui_DownloadManager
 from visuales_uclv.presentation.about_dialog import AboutDialog
+from visuales_uclv.presentation.error_dialog import ErrorDialog
 from visuales_uclv.data.repositories.tree_repository import TreeRepository
 from visuales_uclv.data.clients.scraper import VisualesScraper
 from visuales_uclv.data.clients.downloader import AsyncDownloadManager, DownloadTask
 from visuales_uclv.domain.search_engine import SearchEngine
 from visuales_uclv.core.config.settings import settings
 from visuales_uclv.core.logger.logger import setup_logging, get_logger
-from visuales_uclv.domain.models.nodes import FolderNode, FileNode, BaseNode
+from visuales_uclv.domain.models.nodes import FolderNode, FileNode, BaseNode, FileType
 
 # Initialize logger
 setup_logging()
@@ -24,7 +28,7 @@ logger = get_logger(__name__)
 class Worker(QThread):
     finished = Signal(object)
     progress = Signal(int)
-    error = Signal(str)
+    error = Signal(object) # Changed to object to pass exception info
 
     def __init__(self, func, *args, **kwargs):
         super().__init__()
@@ -49,7 +53,28 @@ class Worker(QThread):
             self.finished.emit(result)
         except Exception as e:
             logger.error(f"Worker error: {e}")
-            self.error.emit(str(e))
+            logger.error(traceback.format_exc())
+            self.error.emit(e)
+
+class PreviewDialog(QDialog):
+    def __init__(self, title, content, is_image=False, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self.resize(600, 500)
+        layout = QVBoxLayout(self)
+
+        if is_image:
+            label = QLabel()
+            pixmap = QPixmap()
+            pixmap.loadFromData(content)
+            label.setPixmap(pixmap.scaled(580, 480, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            label.setAlignment(Qt.AlignCenter)
+            layout.addWidget(label)
+        else:
+            text_edit = QTextEdit()
+            text_edit.setReadOnly(True)
+            text_edit.setText(content if isinstance(content, str) else content.decode('utf-8', errors='replace'))
+            layout.addWidget(text_edit)
 
 class DownloadManagerWindow(QMainWindow, Ui_DownloadManager):
     progress_updated = Signal(object)
@@ -185,7 +210,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                             f.write(f"{node.url}\n")
                 self.statusbar.showMessage(f"Enlaces exportados a {file_path}")
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"No se pudo exportar: {e}")
+                self.on_error(e)
 
     def show_context_menu(self, pos):
         item = self.tableWidget.itemAt(pos)
@@ -193,6 +218,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         menu = QMenu()
         download_action = menu.addAction("Descargar")
+        favorite_action = menu.addAction("Marcar/Desmarcar Favorito")
 
         action = menu.exec(self.tableWidget.viewport().mapToGlobal(pos))
         if action == download_action:
@@ -202,24 +228,59 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if isinstance(file_node, FileNode):
                 self.download_manager.enqueue(file_node)
                 self.statusbar.showMessage(f"Encolado {file_node.name}")
+        elif action == favorite_action:
+            row = item.row()
+            name_item = self.tableWidget.item(row, 0)
+            node = name_item.data(Qt.UserRole)
+            if isinstance(node, BaseNode):
+                node.is_favorite = not node.is_favorite
+                self.statusbar.showMessage(f"{'Marcado' if node.is_favorite else 'Desmarcado'} como favorito")
+                # Update icon or something
 
     def on_table_double_clicked(self, item):
         row = item.row()
+        name_item = self.tableWidget.item(row, 0)
+        node = name_item.data(Qt.UserRole)
+
         if self.search_input.isVisible():
-            url_item = self.tableWidget.item(row, 1)
-            if not url_item: return
-            url = url_item.text()
-            if url.endswith("/"):
-                self.navigate_to_url(url)
-            else:
-                parent_url = url[:url.rfind("/")+1]
+            if isinstance(node, FolderNode):
+                self.navigate_to_url(node.url)
+            elif isinstance(node, FileNode):
+                parent_url = node.url[:node.url.rfind("/")+1]
                 self.navigate_to_url(parent_url)
+        else:
+            if isinstance(node, FileNode):
+                if node.file_type in [FileType.IMAGE, FileType.TEXT]:
+                    self.preview_file(node)
+                else:
+                    # Open in browser?
+                    import webbrowser
+                    webbrowser.open(node.url)
+
+    def preview_file(self, file: FileNode):
+        self.statusbar.showMessage(f"Obteniendo previsualización de {file.name}...")
+        async def fetch_content():
+            async with aiohttp.ClientSession() as session:
+                async with session.get(file.url) as response:
+                    return await response.read()
+
+        worker = Worker(fetch_content)
+        worker.finished.connect(lambda content: self.show_preview(file, content))
+        worker.error.connect(self.on_error)
+        worker.start()
+        self._current_worker = worker
+
+    def show_preview(self, file: FileNode, content):
+        self.statusbar.showMessage("Listo")
+        is_image = file.file_type == FileType.IMAGE
+        dialog = PreviewDialog(file.name, content, is_image=is_image, parent=self)
+        dialog.exec()
 
     def navigate_to_url(self, url):
         self.load_folder_contents(url)
 
-    def animate_search_bar(self, show: bool):
-        if show:
+    def toggle_search(self, checked):
+        if checked:
             self.search_input.setVisible(True)
             self.search_input.setFocus()
             self.tableWidget.setHorizontalHeaderLabels(["Nombre", "URL", "Puntaje"])
@@ -227,9 +288,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.search_input.setVisible(False)
             self.search_input.clear()
             self.tableWidget.setHorizontalHeaderLabels(["Nombre", "Tamaño", "Fecha"])
-
-    def toggle_search(self, checked):
-        self.animate_search_bar(checked)
 
     def perform_search(self, text):
         if len(text) < 3:
@@ -252,20 +310,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.progress_bar.setVisible(True)
 
         worker = Worker(self.scraper.download_listado)
+        worker.progress.connect(self.progress_bar.setValue)
         worker.finished.connect(self.on_listado_downloaded)
         worker.error.connect(self.on_error)
         worker.start()
         self._current_worker = worker
 
-    def on_error(self, message):
+    def on_error(self, error):
         self.progress_bar.setVisible(False)
-        QMessageBox.critical(self, "Error", message)
+        details = "".join(traceback.format_exception(type(error), error, error.__traceback__)) if hasattr(error, '__traceback__') else str(error)
+        dialog = ErrorDialog("Error", "Ha ocurrido un problema", details, self)
+        dialog.exec()
 
     def on_listado_downloaded(self, html):
         self.statusbar.showMessage("Construyendo árbol...")
         worker = Worker(self.tree_repo.build_from_html, html)
         worker.progress.connect(self.progress_bar.setValue)
         worker.finished.connect(self.on_tree_built)
+        worker.error.connect(self.on_error)
         worker.start()
         self._current_worker = worker
 

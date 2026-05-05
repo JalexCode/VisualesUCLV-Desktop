@@ -1,5 +1,7 @@
 import logging
 import os
+import sys
+import traceback
 from logging.handlers import RotatingFileHandler
 
 def setup_logging(log_level=logging.INFO):
@@ -11,7 +13,7 @@ def setup_logging(log_level=logging.INFO):
     log_file = os.path.join(log_dir, "visuales_uclv.log")
 
     # Rotating file handler (10MB per file, keep 5 backups)
-    file_handler = RotatingFileHandler(log_file, maxBytes=10*1024*1024, backupCount=5)
+    file_handler = RotatingFileHandler(log_file, maxBytes=10*1024*1024, backupCount=5, encoding='utf-8')
     file_handler.setFormatter(log_formatter)
     file_handler.setLevel(log_level)
 
@@ -27,3 +29,14 @@ def setup_logging(log_level=logging.INFO):
 
 def get_logger(name):
     return logging.getLogger(name)
+
+def handle_exception(exc_type, exc_value, exc_traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+
+    logger = logging.getLogger("CRASH")
+    error_msg = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+    logger.critical("Unhandled exception:\n%s", error_msg)
+
+sys.excepthook = handle_exception

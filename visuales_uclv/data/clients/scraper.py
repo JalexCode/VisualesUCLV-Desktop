@@ -2,7 +2,7 @@ import aiohttp
 import os
 from bs4 import BeautifulSoup
 from datetime import datetime
-from typing import List
+from typing import List, Optional, Callable
 from visuales_uclv.domain.models.nodes import FolderNode, FileNode, FileType
 from visuales_uclv.core.config.settings import settings
 from visuales_uclv.core.logger.logger import get_logger
@@ -42,48 +42,74 @@ class VisualesScraper:
             return 0
 
     async def get_folder_contents(self, url: str) -> List[FileNode]:
-        html = await self.fetch_html(url)
-        soup = BeautifulSoup(html, "lxml")
-        files = []
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, timeout=settings.request_timeout) as response:
+                html = await response.text()
+                soup = BeautifulSoup(html, "lxml")
+                files = []
 
-        # Skip header rows
-        rows = soup.find_all("tr")[3:]
-        for row in rows:
-            cols = row.find_all("td")
-            if len(cols) < 5: continue
+                # Skip header rows
+                rows = soup.find_all("tr")[3:]
+                for row in rows:
+                    cols = row.find_all("td")
+                    if len(cols) < 5: continue
 
-            img = cols[0].find("img")
-            name_link = cols[1].find("a")
-            if not name_link or not img: continue
+                    img = cols[0].find("img")
+                    name_link = cols[1].find("a")
+                    if not name_link or not img: continue
 
-            name = name_link.text.strip()
-            href = name_link.get("href")
-            full_url = url + href if not href.startswith("http") else href
+                    name = name_link.text.strip()
+                    href = name_link.get("href")
+                    full_url = url + href if not href.startswith("http") else href
 
-            size_str = cols[3].text.strip()
-            if size_str == "-": # It's a folder
-                continue
+                    size_str = cols[3].text.strip()
+                    if size_str == "-": continue
 
-            mod_date_str = cols[2].text.strip()
-            try:
-                mod_date = datetime.fromisoformat(mod_date_str)
-            except ValueError:
-                mod_date = None
+                    mod_date_str = cols[2].text.strip()
+                    try:
+                        mod_date = datetime.fromisoformat(mod_date_str)
+                    except ValueError:
+                        mod_date = None
 
-            file_node = FileNode(
-                name=name,
-                url=full_url,
-                parent_url=url,
-                size=self._parse_size(size_str),
-                modification_date=mod_date,
-                file_type=self._parse_file_type(img.get("src", ""))
-            )
-            files.append(file_node)
+                    file_node = FileNode(
+                        name=name,
+                        url=full_url,
+                        parent_url=url,
+                        size=self._parse_size(size_str),
+                        modification_date=mod_date,
+                        file_type=self._parse_file_type(img.get("src", ""))
+                    )
+                    files.append(file_node)
 
-        return files
+                return files
 
-    async def download_listado(self) -> str:
-        html = await self.fetch_html(self.listado_url)
-        with open(settings.data_folder / settings.listado_cache_file, "w", encoding="utf-8") as f:
-            f.write(html)
-        return html
+    async def download_listado(self, progress_callback: Optional[Callable[[int], None]] = None) -> str:
+        logger.info(f"Starting download of {self.listado_url}")
+        async with aiohttp.ClientSession() as session:
+            async with session.get(self.listado_url, timeout=None) as response:
+                if response.status != 200:
+                    raise Exception(f"Error del servidor: {response.status}")
+
+                total_size = int(response.headers.get("Content-Length", 0))
+                downloaded = 0
+                chunks = []
+
+                async for chunk in response.content.iter_chunked(settings.chunk_size):
+                    chunks.append(chunk)
+                    downloaded += len(chunk)
+                    if progress_callback and total_size > 0:
+                        progress_callback(int((downloaded / total_size) * 100))
+
+                # Combine chunks
+                content = b"".join(chunks)
+
+                # Try to decode with utf-8, ignore errors to be safe with mixed encodings
+                html = content.decode("utf-8", errors="replace")
+
+                # Save to cache
+                cache_path = settings.data_folder / settings.listado_cache_file
+                with open(cache_path, "w", encoding="utf-8") as f:
+                    f.write(html)
+
+                logger.info(f"Saved listado.html to {cache_path}")
+                return html
