@@ -48,7 +48,6 @@ class VisualesScraper:
                 soup = BeautifulSoup(html, "lxml")
                 files = []
 
-                # Skip header rows
                 rows = soup.find_all("tr")[3:]
                 for row in rows:
                     cols = row.find_all("td")
@@ -83,7 +82,7 @@ class VisualesScraper:
 
                 return files
 
-    async def download_listado(self, progress_callback: Optional[Callable[[int], None]] = None) -> str:
+    async def download_listado(self, progress_callback: Optional[Callable[[int], None]] = None) -> bytes:
         logger.info(f"Starting download of {self.listado_url}")
         async with aiohttp.ClientSession() as session:
             async with session.get(self.listado_url, timeout=None) as response:
@@ -100,16 +99,11 @@ class VisualesScraper:
                     if progress_callback and total_size > 0:
                         progress_callback(int((downloaded / total_size) * 100))
 
-                # Combine chunks
                 content = b"".join(chunks)
 
-                # Try to decode with utf-8, ignore errors to be safe with mixed encodings
-                html = content.decode("utf-8", errors="replace")
-
-                # Save to cache
                 cache_path = settings.data_folder / settings.listado_cache_file
-                with open(cache_path, "w", encoding="utf-8") as f:
-                    f.write(html)
+                with open(cache_path, "wb") as f:
+                    f.write(content)
 
                 logger.info(f"Saved listado.html to {cache_path}")
-                return html
+                return content

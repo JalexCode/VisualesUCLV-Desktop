@@ -35,8 +35,17 @@ def handle_exception(exc_type, exc_value, exc_traceback):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
 
-    logger = logging.getLogger("CRASH")
     error_msg = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
-    logger.critical("Unhandled exception:\n%s", error_msg)
+    logging.getLogger("CRASH").critical("Unhandled exception:\n%s", error_msg)
+
+    # Try to show a dialog if we are in a GUI environment
+    try:
+        from PySide6.QtWidgets import QApplication
+        from visuales_uclv.presentation.error_dialog import ErrorDialog
+        if QApplication.instance():
+            dialog = ErrorDialog("Error Fatal", "La aplicación ha detectado un error inesperado", error_msg)
+            dialog.exec()
+    except Exception:
+        pass
 
 sys.excepthook = handle_exception

@@ -28,7 +28,7 @@ logger = get_logger(__name__)
 class Worker(QThread):
     finished = Signal(object)
     progress = Signal(int)
-    error = Signal(object) # Changed to object to pass exception info
+    error = Signal(object)
 
     def __init__(self, func, *args, **kwargs):
         super().__init__()
@@ -52,22 +52,21 @@ class Worker(QThread):
                 result = self.func(*self.args, **self.kwargs)
             self.finished.emit(result)
         except Exception as e:
-            logger.error(f"Worker error: {e}")
-            logger.error(traceback.format_exc())
+            logger.error(f"Worker error: {e}\n{traceback.format_exc()}")
             self.error.emit(e)
 
 class PreviewDialog(QDialog):
     def __init__(self, title, content, is_image=False, parent=None):
         super().__init__(parent)
         self.setWindowTitle(title)
-        self.resize(600, 500)
+        self.resize(800, 600)
         layout = QVBoxLayout(self)
 
         if is_image:
             label = QLabel()
             pixmap = QPixmap()
             pixmap.loadFromData(content)
-            label.setPixmap(pixmap.scaled(580, 480, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            label.setPixmap(pixmap.scaled(self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
             label.setAlignment(Qt.AlignCenter)
             layout.addWidget(label)
         else:
@@ -118,8 +117,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # UI Elements
         self.setup_custom_ui()
-
-        # Connections
         self.setup_connections()
 
         # Initial load
@@ -127,7 +124,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.populate_tree()
             self.search_engine.refresh()
         else:
-            self.statusbar.showMessage("Caché no encontrada. Por favor, actualice el repositorio.")
+            self.statusbar.showMessage("Bienvenido. Sincronice el repositorio para comenzar.")
 
     def setup_custom_ui(self):
         self.progress_bar = QProgressBar()
@@ -137,19 +134,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Buscar...")
-        self.search_input.setMinimumWidth(200)
+        self.search_input.setMinimumWidth(250)
         self.search_input.setVisible(False)
         self.statusbar.addPermanentWidget(self.search_input)
 
-        self.main_toolbar = QToolBar("Barra de Herramientas")
-        self.main_toolbar.setIconSize(QSize(24, 24))
+        self.main_toolbar = QToolBar("Principal")
+        self.main_toolbar.setIconSize(QSize(32, 32))
         self.main_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.addToolBar(Qt.TopToolBarArea, self.main_toolbar)
 
         self.btn_download_repo = QToolButton()
         self.btn_download_repo.setText("Actualizar")
         self.btn_download_repo.setIcon(QIcon(":/icons/images/repo_download.png"))
-        self.btn_download_repo.setToolTip("Sincronizar con el servidor")
         self.btn_download_repo.clicked.connect(self.download_repo)
         self.main_toolbar.addWidget(self.btn_download_repo)
 
@@ -171,7 +167,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_export = QToolButton()
         self.btn_export.setText("Exportar")
         self.btn_export.setIcon(QIcon(":/icons/images/txt.png"))
-        self.btn_export.setToolTip("Exportar enlaces actuales a TXT")
         self.btn_export.clicked.connect(self.export_to_txt)
         self.main_toolbar.addWidget(self.btn_export)
 
@@ -191,15 +186,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.export_local_repo_as_txt_action.triggered.connect(self.export_to_txt)
 
     def show_about(self):
-        dialog = AboutDialog(self)
-        dialog.exec()
+        AboutDialog(self).exec()
 
     def export_to_txt(self):
         if self.tableWidget.rowCount() == 0:
-            QMessageBox.warning(self, "Exportar", "No hay enlaces para exportar.")
+            QMessageBox.warning(self, "Exportar", "No hay elementos en la tabla.")
             return
 
-        file_path, _ = QFileDialog.getSaveFileName(self, "Exportar enlaces", "", "Archivos de texto (*.txt)")
+        file_path, _ = QFileDialog.getSaveFileName(self, "Exportar enlaces", "", "TXT (*.txt)")
         if file_path:
             try:
                 with open(file_path, 'w', encoding='utf-8') as f:
@@ -208,7 +202,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         node = item.data(Qt.UserRole)
                         if isinstance(node, BaseNode):
                             f.write(f"{node.url}\n")
-                self.statusbar.showMessage(f"Enlaces exportados a {file_path}")
+                self.statusbar.showMessage(f"Guardado en {file_path}")
             except Exception as e:
                 self.on_error(e)
 
@@ -217,85 +211,79 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if not item: return
 
         menu = QMenu()
-        download_action = menu.addAction("Descargar")
-        favorite_action = menu.addAction("Marcar/Desmarcar Favorito")
+        row = item.row()
+        node = self.tableWidget.item(row, 0).data(Qt.UserRole)
 
-        action = menu.exec(self.tableWidget.viewport().mapToGlobal(pos))
-        if action == download_action:
-            row = item.row()
-            name_item = self.tableWidget.item(row, 0)
-            file_node = name_item.data(Qt.UserRole)
-            if isinstance(file_node, FileNode):
-                self.download_manager.enqueue(file_node)
-                self.statusbar.showMessage(f"Encolado {file_node.name}")
-        elif action == favorite_action:
-            row = item.row()
-            name_item = self.tableWidget.item(row, 0)
-            node = name_item.data(Qt.UserRole)
-            if isinstance(node, BaseNode):
-                node.is_favorite = not node.is_favorite
-                self.statusbar.showMessage(f"{'Marcado' if node.is_favorite else 'Desmarcado'} como favorito")
-                # Update icon or something
+        if isinstance(node, FileNode):
+            dl_act = menu.addAction("Descargar")
+            dl_act.triggered.connect(lambda: self.download_manager.enqueue(node))
+
+        fav_text = "Quitar Favorito" if node.is_favorite else "Marcar Favorito"
+        fav_act = menu.addAction(fav_text)
+
+        def toggle_fav():
+            node.is_favorite = not node.is_favorite
+            self.refresh_table_icons()
+
+        fav_act.triggered.connect(toggle_fav)
+        menu.exec(self.tableWidget.viewport().mapToGlobal(pos))
+
+    def refresh_table_icons(self):
+        for row in range(self.tableWidget.rowCount()):
+            item = self.tableWidget.item(row, 0)
+            node = item.data(Qt.UserRole)
+            if node.is_favorite:
+                item.setIcon(QIcon(":/icons/images/favorite.png"))
+            else:
+                # Reset to default file/folder icon
+                item.setIcon(QIcon())
 
     def on_table_double_clicked(self, item):
         row = item.row()
-        name_item = self.tableWidget.item(row, 0)
-        node = name_item.data(Qt.UserRole)
+        node = self.tableWidget.item(row, 0).data(Qt.UserRole)
 
         if self.search_input.isVisible():
             if isinstance(node, FolderNode):
                 self.navigate_to_url(node.url)
             elif isinstance(node, FileNode):
-                parent_url = node.url[:node.url.rfind("/")+1]
-                self.navigate_to_url(parent_url)
+                self.navigate_to_url(node.parent_url)
         else:
             if isinstance(node, FileNode):
                 if node.file_type in [FileType.IMAGE, FileType.TEXT]:
                     self.preview_file(node)
                 else:
-                    # Open in browser?
                     import webbrowser
                     webbrowser.open(node.url)
 
     def preview_file(self, file: FileNode):
-        self.statusbar.showMessage(f"Obteniendo previsualización de {file.name}...")
-        async def fetch_content():
+        self.statusbar.showMessage(f"Previsualizando {file.name}...")
+        async def fetch():
             async with aiohttp.ClientSession() as session:
-                async with session.get(file.url) as response:
-                    return await response.read()
+                async with session.get(file.url) as r:
+                    return await r.read()
 
-        worker = Worker(fetch_content)
-        worker.finished.connect(lambda content: self.show_preview(file, content))
+        worker = Worker(fetch)
+        worker.finished.connect(lambda data: PreviewDialog(file.name, data, file.file_type == FileType.IMAGE, self).exec())
         worker.error.connect(self.on_error)
         worker.start()
         self._current_worker = worker
-
-    def show_preview(self, file: FileNode, content):
-        self.statusbar.showMessage("Listo")
-        is_image = file.file_type == FileType.IMAGE
-        dialog = PreviewDialog(file.name, content, is_image=is_image, parent=self)
-        dialog.exec()
 
     def navigate_to_url(self, url):
         self.load_folder_contents(url)
 
     def toggle_search(self, checked):
+        self.search_input.setVisible(checked)
         if checked:
-            self.search_input.setVisible(True)
             self.search_input.setFocus()
-            self.tableWidget.setHorizontalHeaderLabels(["Nombre", "URL", "Puntaje"])
+            self.tableWidget.setHorizontalHeaderLabels(["Nombre", "URL", "Score"])
         else:
-            self.search_input.setVisible(False)
             self.search_input.clear()
             self.tableWidget.setHorizontalHeaderLabels(["Nombre", "Tamaño", "Fecha"])
+        self.tableWidget.setRowCount(0)
 
     def perform_search(self, text):
-        if len(text) < 3:
-            return
+        if len(text) < 3: return
         results = self.search_engine.fuzzy_search(text)
-        self.populate_search_results(results)
-
-    def populate_search_results(self, results):
         self.tableWidget.setRowCount(len(results))
         for i, (node, score) in enumerate(results):
             item = QTableWidgetItem(node.name)
@@ -305,7 +293,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.tableWidget.setItem(i, 2, QTableWidgetItem(f"{score:.1f}"))
 
     def download_repo(self):
-        self.statusbar.showMessage("Descargando listado.html...")
+        self.statusbar.showMessage("Descargando listado...")
         self.progress_bar.setValue(0)
         self.progress_bar.setVisible(True)
 
@@ -318,13 +306,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def on_error(self, error):
         self.progress_bar.setVisible(False)
-        details = "".join(traceback.format_exception(type(error), error, error.__traceback__)) if hasattr(error, '__traceback__') else str(error)
-        dialog = ErrorDialog("Error", "Ha ocurrido un problema", details, self)
-        dialog.exec()
+        details = "".join(traceback.format_exception(type(error), error, error.__traceback__))
+        ErrorDialog("Error", "Se produjo un error en la operación", details, self).exec()
 
-    def on_listado_downloaded(self, html):
-        self.statusbar.showMessage("Construyendo árbol...")
-        worker = Worker(self.tree_repo.build_from_html, html)
+    def on_listado_downloaded(self, content):
+        self.statusbar.showMessage("Procesando árbol...")
+        worker = Worker(self.tree_repo.build_from_html, content)
         worker.progress.connect(self.progress_bar.setValue)
         worker.finished.connect(self.on_tree_built)
         worker.error.connect(self.on_error)
@@ -335,15 +322,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.progress_bar.setVisible(False)
         self.populate_tree()
         self.search_engine.refresh()
-        self.statusbar.showMessage("Repositorio listo.")
+        self.statusbar.showMessage("Repositorio actualizado.")
 
     def populate_tree(self):
         self.treeWidget.clear()
         if not self.tree_repo.tree.root: return
-        root_nodes = self.tree_repo.tree.children(self.tree_repo.tree.root)
-        for node in root_nodes:
-            item = self.create_tree_item(node.tag)
-            self.treeWidget.addTopLevelItem(item)
+        root_node = self.tree_repo.tree.get_node(self.tree_repo.tree.root)
+        item = self.create_tree_item(root_node.tag)
+        self.treeWidget.addTopLevelItem(item)
+        item.setExpanded(True)
 
     def create_tree_item(self, node: FolderNode):
         item = QTreeWidgetItem([node.name])
@@ -357,13 +344,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         url = item.data(0, Qt.UserRole)
         if item.childCount() > 0 and item.child(0).text(0) == "Cargando...":
             item.takeChild(0)
-            children = self.tree_repo.get_children(url)
-            for child in children:
+            for child in self.tree_repo.get_children(url):
                 item.addChild(self.create_tree_item(child))
 
     def on_item_clicked(self, item):
-        url = item.data(0, Qt.UserRole)
-        self.load_folder_contents(url)
+        self.load_folder_contents(item.data(0, Qt.UserRole))
 
     def load_folder_contents(self, url):
         self.statusbar.showMessage(f"Cargando {url}")
@@ -379,13 +364,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for i, file in enumerate(files):
             item = QTableWidgetItem(file.name)
             item.setData(Qt.UserRole, file)
+            if file.is_favorite: item.setIcon(QIcon(":/icons/images/favorite.png"))
             self.tableWidget.setItem(i, 0, item)
             self.tableWidget.setItem(i, 1, QTableWidgetItem(self.format_size(file.size)))
             self.tableWidget.setItem(i, 2, QTableWidgetItem(file.modification_date.strftime("%d/%m/%Y") if file.modification_date else ""))
-        self.statusbar.showMessage("Listo")
+        self.statusbar.showMessage("Carpeta cargada.")
 
     def format_size(self, size):
-        if size == 0: return "0 B"
+        if size == 0: return "-"
         for unit in ['B', 'KB', 'MB', 'GB']:
             if size < 1024: return f"{size:.2f} {unit}"
             size /= 1024
