@@ -132,12 +132,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.progress_bar.setVisible(False)
         self.statusbar.addPermanentWidget(self.progress_bar)
 
-        self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Buscar...")
-        self.search_input.setMinimumWidth(250)
-        self.search_input.setVisible(False)
-        self.statusbar.addPermanentWidget(self.search_input)
-
         self.main_toolbar = QToolBar("Principal")
         self.main_toolbar.setIconSize(QSize(32, 32))
         self.main_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
@@ -146,7 +140,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_download_repo = QToolButton()
         self.btn_download_repo.setText("Actualizar")
         self.btn_download_repo.setIcon(QIcon(":/icons/images/repo_download.png"))
-        self.btn_download_repo.clicked.connect(self.download_repo)
+        self.btn_download_repo.clicked.connect(self.confirm_update_repo)
         self.main_toolbar.addWidget(self.btn_download_repo)
 
         self.main_toolbar.addSeparator()
@@ -157,6 +151,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_search.setCheckable(True)
         self.btn_search.clicked.connect(self.toggle_search)
         self.main_toolbar.addWidget(self.btn_search)
+
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Buscar en todo el repositorio...")
+        self.search_input.setMinimumWidth(300)
+        self.search_input.setVisible(False)
+        self.main_toolbar.addWidget(self.search_input)
 
         self.btn_downloads = QToolButton()
         self.btn_downloads.setText("Descargas")
@@ -292,8 +292,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.tableWidget.setItem(i, 1, QTableWidgetItem(node.url))
             self.tableWidget.setItem(i, 2, QTableWidgetItem(f"{score:.1f}"))
 
+    def confirm_update_repo(self):
+        self.statusbar.showMessage("Obteniendo tamaño del listado...")
+        worker = Worker(self.scraper.get_listado_size)
+        worker.finished.connect(self._on_listado_size_received)
+        worker.error.connect(self.on_error)
+        worker.start()
+        self._current_worker = worker
+
+    def _on_listado_size_received(self, size: int):
+        size_str = self.format_size(size)
+        reply = QMessageBox.question(
+            self, "Actualizar Repositorio",
+            f"¿Desea descargar el listado de directorios?\n\nTamaño aproximado: {size_str}",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if reply == QMessageBox.Yes:
+            self.download_repo()
+
     def download_repo(self):
         self.statusbar.showMessage("Descargando listado...")
+        self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
         self.progress_bar.setVisible(True)
 
@@ -311,6 +330,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def on_listado_downloaded(self, content):
         self.statusbar.showMessage("Procesando árbol...")
+        self.progress_bar.setRange(0, 100)
         worker = Worker(self.tree_repo.build_from_html, content)
         worker.progress.connect(self.progress_bar.setValue)
         worker.finished.connect(self.on_tree_built)
@@ -351,20 +371,56 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.load_folder_contents(item.data(0, Qt.UserRole))
 
     def load_folder_contents(self, url):
-        self.statusbar.showMessage(f"Cargando {url}")
+        self.statusbar.showMessage(f"Cargando {url} ...")
         self.tableWidget.setRowCount(0)
+        self.progress_bar.setRange(0, 0) # Indeterminate
+        self.progress_bar.setVisible(True)
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+
         worker = Worker(self.scraper.get_folder_contents, url)
-        worker.finished.connect(self.populate_table)
-        worker.error.connect(self.on_error)
+        worker.finished.connect(self.on_folder_loaded)
+        worker.error.connect(self.on_folder_load_error)
         worker.start()
         self._current_worker = worker
+
+    def on_folder_loaded(self, files):
+        QApplication.restoreOverrideCursor()
+        self.progress_bar.setVisible(False)
+        self.populate_table(files)
+
+    def on_folder_load_error(self, error):
+        QApplication.restoreOverrideCursor()
+        self.progress_bar.setVisible(False)
+        self.on_error(error)
+
+    def get_type_icon(self, file_type: FileType) -> QIcon:
+        icon_map = {
+            FileType.MOVIE: ":/icons/images/video.png",
+            FileType.IMAGE: ":/icons/images/picture.png",
+            FileType.AUDIO: ":/icons/images/audio.png",
+            FileType.TEXT: ":/icons/images/txt.png",
+            FileType.PDF: ":/icons/images/pdf.png",
+            FileType.SOFTWARE: ":/icons/images/software.png",
+            FileType.COMPRESSED: ":/icons/images/rar.png",
+        }
+        path = icon_map.get(file_type, ":/icons/images/uknown.png")
+        return QIcon(path)
 
     def populate_table(self, files: List[FileNode]):
         self.tableWidget.setRowCount(len(files))
         for i, file in enumerate(files):
             item = QTableWidgetItem(file.name)
             item.setData(Qt.UserRole, file)
-            if file.is_favorite: item.setIcon(QIcon(":/icons/images/favorite.png"))
+
+            # Use specific type icon
+            icon = self.get_type_icon(file.file_type)
+            if file.is_favorite:
+                icon = QIcon(":/icons/images/favorite.png")
+            item.setIcon(icon)
+
+            # Add checkbox
+            item.setCheckState(Qt.Unchecked)
+
             self.tableWidget.setItem(i, 0, item)
             self.tableWidget.setItem(i, 1, QTableWidgetItem(self.format_size(file.size)))
             self.tableWidget.setItem(i, 2, QTableWidgetItem(file.modification_date.strftime("%d/%m/%Y") if file.modification_date else ""))

@@ -82,6 +82,11 @@ class VisualesScraper:
 
                 return files
 
+    async def get_listado_size(self) -> int:
+        async with aiohttp.ClientSession() as session:
+            async with session.head(self.listado_url, timeout=settings.request_timeout) as response:
+                return int(response.headers.get("Content-Length", 0))
+
     async def download_listado(self, progress_callback: Optional[Callable[[int], None]] = None) -> bytes:
         logger.info(f"Starting download of {self.listado_url}")
         async with aiohttp.ClientSession() as session:

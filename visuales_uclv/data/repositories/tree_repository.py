@@ -47,18 +47,22 @@ class TreeRepository:
 
         total_links = len(links) - 1
         for i, link in enumerate(links[1:]):
-            url = self._normalize_url(link.get("href"))
-            if not url: continue
+            raw_url = link.get("href")
+            if not raw_url: continue
+
+            url = self._normalize_url(raw_url)
+            if not url.endswith("/"):
+                 url += "/"
 
             name = link.text.strip() or os.path.basename(url.rstrip("/"))
             parent_url = self._get_parent_url(url)
 
-            # Normalize folder url if it is directory in listado.html
-            if not url.endswith("/") and parent_url:
-                 url += "/"
+            if url == root_url: continue
 
             try:
-                # Always use normalized URLs for lookup and insertion
+                if self.tree.contains(url):
+                    continue
+
                 if self.tree.contains(parent_url):
                     self.tree.create_node(
                         tag=FolderNode(name=name, url=url, parent_url=parent_url),
@@ -66,13 +70,14 @@ class TreeRepository:
                         parent=parent_url
                     )
                 else:
+                    # If parent not found, attach to root to avoid losing the node
                     self.tree.create_node(
-                        tag=FolderNode(name=name, url=url, parent_url=self.tree.root),
+                        tag=FolderNode(name=name, url=url, parent_url=root_url),
                         identifier=url,
-                        parent=self.tree.root
+                        parent=root_url
                     )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Error adding node {url}: {e}")
 
             if progress_callback and i % 500 == 0:
                 progress_callback(int((i / total_links) * 100))
